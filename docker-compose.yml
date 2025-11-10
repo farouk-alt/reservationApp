@@ -1,0 +1,52 @@
+version: '3.9'
+
+services:
+  # 🌐 Laravel backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: laravel_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/var/www/html
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=reservation_db
+      - DB_USERNAME=root
+      - DB_PASSWORD=
+    depends_on:
+      - db
+    command: >
+      sh -c "php artisan migrate:fresh --seed && php artisan serve --host=0.0.0.0 --port=8000"
+
+  # 🐬 MySQL database
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: reservation_db
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  # ⚛️ React frontend (optional)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: react_frontend
+    ports:
+      - "5173:5173"
+    stdin_open: true
+    tty: true
+    depends_on:
+      - backend
+
+volumes:
+  db_data:

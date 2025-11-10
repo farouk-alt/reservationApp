@@ -1,0 +1,23 @@
+# Node & Composer
+node_modules/
+vendor/
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.production.local
+
+# Docker
+docker-data/
+*.pid
+
+# Build files
+frontend/dist
+backend/storage/logs/*.log
+backend/bootstrap/cache/*.php
+
+# IDE / OS files
+.vscode/
+.DS_Store
+Thumbs.db
