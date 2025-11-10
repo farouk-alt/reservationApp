@@ -11,5 +11,4 @@ Full-stack application for managing room reservations.
 
 ```bash
 git clone https://github.com/your-username/reservation-management-app.git
-cd reservation-management-app
 docker compose up --build
