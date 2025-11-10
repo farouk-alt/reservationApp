@@ -13,6 +13,7 @@ class SalleTest extends TestCase
         // CREATE
         $response = $this->postJson('/api/salles', [
             'type' => 'Salle de réunion',
+            'code' => 'S1',
             'capacite' => 15,
             'statut' => 'active',
         ]);
@@ -24,7 +25,11 @@ class SalleTest extends TestCase
         $this->getJson('/api/salles')->assertJsonFragment(['type' => 'Salle de réunion']);
 
         // UPDATE
-        $this->putJson("/api/salles/{$id}", ['type' => 'Salle VIP'])->assertStatus(200);
+        $this->putJson("/api/salles/{$id}", [
+            'type' => 'Salle VIP',
+            'code' => '1A'
+        ])->assertStatus(200);
+
 
         // DELETE
         $this->deleteJson("/api/salles/{$id}")->assertStatus(200);

@@ -23,6 +23,7 @@ class ReservationController extends Controller
             'date_res' => 'required|date',
             'heure_res' => 'required',
             'duree' => 'required|integer|min:1',
+            'statut' => 'nullable|string',
         ]);
 
         // ✅ Check if salle is available at that time
@@ -49,11 +50,12 @@ class ReservationController extends Controller
     public function update(Request $request, Reservation $reservation)
     {
         $validated = $request->validate([
-            'date_res' => 'required|date',
-            'heure_res' => 'required',
-            'duree' => 'required|integer|min:1',
-            'statut' => 'nullable|string',
+        'date_res' => 'sometimes|required|date',
+        'heure_res' => 'sometimes|required',
+        'duree' => 'sometimes|required|integer|min:1',
+        'statut' => 'sometimes|required|string',
         ]);
+
 
         $reservation->update($validated);
 

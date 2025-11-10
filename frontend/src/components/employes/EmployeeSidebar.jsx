@@ -1,12 +1,12 @@
 import React from "react";
 import { motion as Motion } from "framer-motion";
 
-export default function AdminSidebar({ active, setActive, collapsed, setCollapsed }) {
+export default function EmployeeSidebar({ active, setActive, collapsed, setCollapsed }) {
   const menuItems = [
-    { key: "stats", label: "Statistiques", icon: "📊" },
     { key: "salles", label: "Salles", icon: "🏢" },
-    { key: "employes", label: "Employés", icon: "👥" },
+    { key: "reservations", label: "Réservations", icon: "📅" },
     { key: "profile", label: "Profil", icon: "👤" },
+    { key: "stats", label: "Statistiques", icon: "📊" },
   ];
 
   return (
@@ -37,7 +37,7 @@ export default function AdminSidebar({ active, setActive, collapsed, setCollapse
             className="fw-bold"
             style={{ fontSize: "1rem", color: "#E2E8F0" }}
           >
-            Admin Panel
+            ReservationApp
           </span>
         )}
         <button
@@ -57,7 +57,10 @@ export default function AdminSidebar({ active, setActive, collapsed, setCollapse
       {/* 🔹 Menu */}
       <ul className="nav flex-column px-2" style={{ flexGrow: 1 }}>
         {menuItems.map((item) => (
-          <li key={item.key} className="nav-item mb-2 d-flex align-items-center">
+          <li
+            key={item.key}
+            className="nav-item mb-2 d-flex align-items-center"
+          >
             <button
               onClick={() => setActive(item.key)}
               className={`btn w-100 d-flex align-items-center ${
@@ -80,12 +83,7 @@ export default function AdminSidebar({ active, setActive, collapsed, setCollapse
                 (e.currentTarget.style.background = "transparent")
               }
             >
-              <span
-                style={{
-                  fontSize: "1.3rem",
-                  marginRight: collapsed ? 0 : "12px",
-                }}
-              >
+              <span style={{ fontSize: "1.3rem", marginRight: collapsed ? 0 : "12px" }}>
                 {item.icon}
               </span>
               {!collapsed && <span>{item.label}</span>}
