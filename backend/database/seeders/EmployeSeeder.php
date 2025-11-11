@@ -10,6 +10,7 @@ class EmployeSeeder extends Seeder
 {
     public function run(): void
     {
+        Employe::truncate();
         Employe::create([
             'nom' => 'Meftah',
             'prenom' => 'Anas',

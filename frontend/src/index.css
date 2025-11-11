@@ -22,3 +22,22 @@
   background-color: rgba(255, 255, 255, 0.15);
   border-color: #ffd43b;
 }
+/* White placeholder text across all inputs */
+::placeholder {
+  color: #f8fafc !important; /* white */
+  opacity: 0.85;
+}
+
+/* Optional: style inputs consistently */
+input.form-control {
+  background: rgba(15, 23, 42, 0.9);
+  color: #E2E8F0;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 10px;
+}
+input:focus {
+  outline: none;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+  border-color: #38BDF8;
+}
+

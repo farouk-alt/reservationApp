@@ -39,7 +39,7 @@ class SalleController extends Controller
 
         $validated = $request->validate([
             'type' => 'sometimes|string|max:50',
-            'code' => 'required|string|unique:salles,code',
+            'code' => 'required|unique:salles,code,' . $id,
             'capacite' => 'sometimes|integer|min:1',
             'statut' => 'nullable|string',
         ]);

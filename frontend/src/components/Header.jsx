@@ -1,13 +1,17 @@
 import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 
-export default function Header({ page, setPage }) {
+export default function Header({ user, onLogout }) {
+  const role = localStorage.getItem("role");
+  const navigate = useNavigate();
+
   return (
     <header
       className="navbar navbar-expand-lg navbar-dark shadow-sm fixed-top"
       style={{
-        background: "rgba(15, 23, 42, 0.8)", // bleu foncé semi-transparent
-        backdropFilter: "blur(10px)", // effet verre dépoli
+        background: "rgba(15, 23, 42, 0.8)",
+        backdropFilter: "blur(10px)",
         WebkitBackdropFilter: "blur(10px)",
         borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
         paddingTop: "0.3rem",
@@ -17,14 +21,10 @@ export default function Header({ page, setPage }) {
       }}
     >
       <div className="container-fluid px-4 d-flex align-items-center">
-        {/* 🏷️ Logo + clic vers Accueil */}
-        <a
+        {/* 🏷️ Logo — clickable to home */}
+        <Link
           className="navbar-brand d-flex align-items-center"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            setPage("home");
-          }}
+          to="/"
           style={{ padding: 0, margin: 0 }}
         >
           <img
@@ -40,9 +40,9 @@ export default function Header({ page, setPage }) {
               filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.5))",
             }}
           />
-        </a>
+        </Link>
 
-        {/* 📋 Bouton hamburger mobile */}
+        {/* 📋 Mobile toggle */}
         <button
           className="navbar-toggler border-0"
           type="button"
@@ -55,94 +55,101 @@ export default function Header({ page, setPage }) {
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        {/* 🔗 Liens */}
+        {/* 🔗 Navigation links */}
         <div
           className="collapse navbar-collapse justify-content-end"
           id="navbarContent"
         >
           <ul className="navbar-nav align-items-center mb-0">
+            {/* Always visible */}
             <li className="nav-item me-2">
-              <button
-                className={`btn btn-link nav-link ${
-                  page === "home" ? "fw-bold text-warning" : "text-light"
-                }`}
-                style={{ padding: "0.3rem 0.75rem", fontSize: "0.95rem" }}
-                onClick={() => setPage("home")}
+              <Link
+                className="btn btn-link nav-link text-light"
+                to="/"
+                style={{ fontSize: "0.95rem" }}
               >
                 Accueil
-              </button>
+              </Link>
             </li>
-            {/* <li className="nav-item me-2">
-              <button
-                className={`btn btn-link nav-link ${
-                  page === "adminSalle" ? "fw-bold text-warning" : "text-light"
-                }`}
-                style={{ padding: "0.3rem 0.75rem", fontSize: "0.95rem" }}
-                onClick={() => setPage("adminSalle")}
-              >
-                Admin - Salles
-              </button>
-            </li>
-            <li className="nav-item me-2">
-              <button
-                className={`btn btn-link nav-link ${
-                  page === "adminEmploye" ? "fw-bold text-warning" : "text-light"
-                }`}
-                style={{ padding: "0.3rem 0.75rem", fontSize: "0.95rem" }}
-                onClick={() => setPage("adminEmploye")}
-              >
-                Admin - Employés
-              </button>
-            </li> */}
-            <li className="nav-item me-2">
-              <button
-                className={`btn btn-link nav-link ${
-                  page === "admin" ? "fw-bold text-warning" : "text-light"
-                }`}
-                style={{ padding: "0.3rem 0.75rem", fontSize: "0.95rem" }}
-                onClick={() => setPage("admin")}
-              >
-                Admin Dashboard
-              </button>
-            </li>
-            <li className="nav-item me-2">
-              <button
-                className={`btn btn-link nav-link ${
-                  page === "emp" ? "fw-bold text-warning" : "text-light"
-                }`}
-                style={{ padding: "0.3rem 0.75rem", fontSize: "0.95rem" }}
-                onClick={() => setPage("emp")}
-              >
-                Employe Tabmeau de bord
-              </button>
-            </li>
-            <li className="nav-item d-flex align-items-center">
-              <button
-                className="btn btn-outline-light me-2"
-                style={{
-                  padding: "0.3rem 0.9rem",
-                  fontSize: "0.9rem",
-                  borderRadius: "20px",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-                }}
-              >
-                Se connecter
-              </button>
-              <button
-                className="btn fw-semibold text-dark"
-                style={{
-                  background:
-                    "linear-gradient(145deg, #FFD43B, #FACC15, #EAB308)",
-                  padding: "0.35rem 0.9rem",
-                  fontSize: "0.9rem",
-                  borderRadius: "20px",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-                  border: "none",
-                }}
-              >
-                S'inscrire
-              </button>
-            </li>
+
+            {/* If connected */}
+            {user && (
+              <>
+                {role === "admin" && (
+                  <li className="nav-item me-2">
+                    <Link
+                      className="btn btn-link nav-link text-light"
+                      to="/admin"
+                      style={{ fontSize: "0.95rem" }}
+                    >
+                      Admin Dashboard
+                    </Link>
+                  </li>
+                )}
+                {role === "employe" && (
+                  <li className="nav-item me-2">
+                    <Link
+                      className="btn btn-link nav-link text-light"
+                      to="/employe"
+                      style={{ fontSize: "0.95rem" }}
+                    >
+                      Tableau Employé
+                    </Link>
+                  </li>
+                )}
+                <li className="nav-item">
+                  <button
+                    onClick={() => {
+                      onLogout();
+                      navigate("/login");
+                    }}
+                    className="btn btn-outline-danger ms-2"
+                    style={{
+                      padding: "0.3rem 0.9rem",
+                      borderRadius: "20px",
+                    }}
+                  >
+                    Déconnexion
+                  </button>
+                </li>
+              </>
+            )}
+
+            {/* If not connected */}
+            {!user && (
+              <li className="nav-item d-flex align-items-center">
+                <Link
+                  to="/login"
+                  className="btn btn-outline-light me-2"
+                  style={{
+                    padding: "0.3rem 0.9rem",
+                    fontSize: "0.9rem",
+                    borderRadius: "20px",
+                    textDecoration: "none",
+                    color: "white",
+                  }}
+                >
+                  Se connecter
+                </Link>
+                <Link
+                  to="/register"
+                  className="btn fw-semibold text-dark"
+                  style={{
+                    background:
+                      "linear-gradient(145deg, #FFD43B, #FACC15, #EAB308)",
+                    padding: "0.35rem 0.9rem",
+                    fontSize: "0.9rem",
+                    borderRadius: "20px",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+                    border: "none",
+                    textDecoration: "none",
+                    color: "black",
+                  }}
+                >
+                  S'inscrire
+                </Link>
+              </li>
+            )}
           </ul>
         </div>
       </div>

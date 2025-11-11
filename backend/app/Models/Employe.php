@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Employe extends Authenticatable
 {
-    use HasFactory;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $table = 'employes';
 
@@ -20,7 +22,7 @@ class Employe extends Authenticatable
         'email',
     ];
 
-    protected $hidden = ['password'];
+    protected $hidden = ['password','remember_token'];
 
     // 🔗 Each employee can have many reservations
     public function reservations()
