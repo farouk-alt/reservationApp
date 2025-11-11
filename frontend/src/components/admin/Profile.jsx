@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "../../api/axios";
 
-export default function AdminProfile() {
+export default function Profile() {
   const [admin, setAdmin] = useState({
     nom: "",
     email: "",
-    username: "",
   });
 
   const [editing, setEditing] = useState(false);
@@ -27,12 +26,12 @@ export default function AdminProfile() {
     fetchAdmin();
   }, []);
 
-  // 🧾 Update admin profile info
+  // 🧾 Update admin name only
   const handleProfileUpdate = async () => {
     try {
       setLoading(true);
-      await axios.put("/admin/profile", admin);
-      setMessage("✅ Profil mis à jour avec succès !");
+      await axios.put("/admin/profile", { nom: admin.nom });
+      setMessage("✅ Nom mis à jour avec succès !");
       setEditing(false);
       setError(null);
     } catch {
@@ -75,38 +74,41 @@ export default function AdminProfile() {
         👤 Profil Administrateur
       </h3>
 
-      {/* 🧾 Editable admin info */}
+      {/* 🧾 Admin Info (only 'nom' editable) */}
       <div style={{ lineHeight: "1.8" }}>
-        {Object.keys(admin).map((key) => (
-          <div className="mb-3" key={key}>
-            <label className="fw-semibold text-light">
-              {key.charAt(0).toUpperCase() + key.slice(1)} :
-            </label>
-            {editing ? (
-              <input
-                type="text"
-                className="form-control mt-1"
-                value={admin[key]}
-                onChange={(e) =>
-                  setAdmin({ ...admin, [key]: e.target.value })
-                }
-                style={{
-                  background: "#0f172a",
-                  color: "#E2E8F0",
-                  border: "1px solid rgba(56,189,248,0.3)",
-                  borderRadius: "10px",
-                }}
-              />
-            ) : (
-              <p
-                className="mb-0"
-                style={{ color: "#E2E8F0", marginTop: "5px" }}
-              >
-                {admin[key] || "—"}
-              </p>
-            )}
-          </div>
-        ))}
+        {/* Nom */}
+        <div className="mb-3">
+          <label className="fw-semibold text-light">Nom :</label>
+          {editing ? (
+            <input
+              type="text"
+              className="form-control mt-1"
+              value={admin.nom || ""}
+              onChange={(e) => setAdmin({ ...admin, nom: e.target.value })}
+              style={{
+                background: "#0f172a",
+                color: "#E2E8F0",
+                border: "1px solid rgba(56,189,248,0.3)",
+                borderRadius: "10px",
+              }}
+            />
+          ) : (
+            <p className="mb-0" style={{ color: "#E2E8F0", marginTop: "5px" }}>
+              {admin.nom || "—"}
+            </p>
+          )}
+        </div>
+
+        {/* Email (readonly) */}
+        <div className="mb-3">
+          <label className="fw-semibold text-light">Email :</label>
+          <p
+            className="mb-0"
+            style={{ color: "#94a3b8", marginTop: "5px" }}
+          >
+            {admin.email || "—"}
+          </p>
+        </div>
       </div>
 
       {/* 🔘 Edit / Save buttons */}
@@ -124,7 +126,7 @@ export default function AdminProfile() {
               width: "48%",
             }}
           >
-            ✏️ Modifier le profil
+            ✏️ Modifier le nom
           </button>
         ) : (
           <button

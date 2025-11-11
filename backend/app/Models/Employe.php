@@ -22,7 +22,14 @@ class Employe extends Authenticatable
         'email',
     ];
 
-    protected $hidden = ['password','remember_token'];
+        protected $hidden = [
+            'password',
+            'remember_token',
+            'created_at',
+            'updated_at',
+            'id'
+        ];
+
 
     // 🔗 Each employee can have many reservations
     public function reservations()

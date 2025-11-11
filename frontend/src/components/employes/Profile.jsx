@@ -79,7 +79,7 @@ export default function Profile() {
 
       {/* 🧾 Editable profile info */}
       <div style={{ lineHeight: "1.8" }}>
-        {Object.keys(employe).map((key) => (
+        {["nom", "prenom", "departement", "username", "email"].map((key) => (
           <div className="mb-3" key={key}>
             <label className="fw-semibold text-light">
               {key.charAt(0).toUpperCase() + key.slice(1)} :
@@ -88,7 +88,7 @@ export default function Profile() {
               <input
                 type="text"
                 className="form-control mt-1"
-                value={employe[key]}
+                value={employe[key] || ""}
                 onChange={(e) =>
                   setEmploye({ ...employe, [key]: e.target.value })
                 }
@@ -100,15 +100,13 @@ export default function Profile() {
                 }}
               />
             ) : (
-              <p
-                className="mb-0"
-                style={{ color: "#E2E8F0", marginTop: "5px" }}
-              >
+              <p className="mb-0" style={{ color: "#E2E8F0", marginTop: "5px" }}>
                 {employe[key] || "—"}
               </p>
             )}
           </div>
         ))}
+
       </div>
 
       <div className="d-flex justify-content-between mt-3">
