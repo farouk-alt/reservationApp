@@ -14,4 +14,16 @@ export default defineConfig({
       reporter: ["text", "html"],
     },
   },
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    watch: {
+      usePolling: true,  // 🔥 THIS IS THE FIX FOR WINDOWS + DOCKER
+      interval: 1000,     // Check for changes every second
+    },
+    hmr: {
+      host: 'localhost',
+      port: 5173,
+    },
+  },
 })

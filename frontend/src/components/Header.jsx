@@ -113,7 +113,7 @@ export default function Header({ page, setPage }) {
                 style={{ padding: "0.3rem 0.75rem", fontSize: "0.95rem" }}
                 onClick={() => setPage("emp")}
               >
-                EmployeDashbaord
+                Employe Tabmeau de bord
               </button>
             </li>
             <li className="nav-item d-flex align-items-center">
