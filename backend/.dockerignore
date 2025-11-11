@@ -1,0 +1,39 @@
+# Dependencies
+/vendor
+/node_modules
+
+# Storage and caches
+/storage/*.key
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/bootstrap/cache/*
+
+# Symbolic links (causes Docker build errors on Windows)
+/public/storage
+
+# Environment files
+.env
+.env.backup
+.env.production
+
+# IDE files
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Testing
+.phpunit.result.cache
+/coverage
+
+# Git
+.git
+.gitignore
+.gitattributes

@@ -26,11 +26,13 @@ COPY composer*.json ./
 # Install PHP dependencies (will be overridden by volume in dev)
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts || true
 
-# Copy application code
+# Copy application code (excluding items in .dockerignore)
 COPY . .
 
-# Set proper permissions
-RUN mkdir -p storage/framework/{sessions,views,cache} \
+# Set proper permissions and remove any existing storage link
+RUN rm -f public/storage \
+    && mkdir -p storage/framework/{sessions,views,cache} \
+    && mkdir -p storage/app/public \
     && mkdir -p bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
