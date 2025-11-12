@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <!-- CHANGESET 1 : Créer la table employe -->
+    <changeSet id="1" author="votre_nom">
+        <createTable tableName="employe">
+            <column name="NumEmp" type="INT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="Nom" type="VARCHAR(55)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Prenom" type="VARCHAR(55)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Departement" type="VARCHAR(55)"/>
+            <column name="Username" type="VARCHAR(55)">
+                <constraints unique="true" nullable="false"/>
+            </column>
+            <column name="Password" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Email" type="VARCHAR(55)">
+                <constraints unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!-- CHANGESET 2 : Créer la table salle -->
+    <changeSet id="2" author="votre_nom">
+        <createTable tableName="salle">
+            <column name="NumSalle" type="INT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="TypeSalle" type="VARCHAR(15)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Capacite" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="StatutSalle" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!-- CHANGESET 3 : Créer la table reserver -->
+    <changeSet id="3" author="votre_nom">
+        <createTable tableName="reserver">
+            <column name="id" type="INT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="NumEmp" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NumSalle" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DateRes" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="HeureRes" type="TIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Duree" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Statut" type="VARCHAR(55)" defaultValue="En attente">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!-- CHANGESET 4 : Ajouter les clés étrangères -->
+    <changeSet id="4" author="votre_nom">
+        <addForeignKeyConstraint 
+            constraintName="fk_reserver_employe"
+            baseTableName="reserver" 
+            baseColumnNames="NumEmp"
+            referencedTableName="employe" 
+            referencedColumnNames="NumEmp"
+            onDelete="CASCADE"
+            onUpdate="CASCADE"/>
+
+        <addForeignKeyConstraint 
+            constraintName="fk_reserver_salle"
+            baseTableName="reserver" 
+            baseColumnNames="NumSalle"
+            referencedTableName="salle" 
+            referencedColumnNames="NumSalle"
+            onDelete="CASCADE"
+            onUpdate="CASCADE"/>
+    </changeSet>
+
+</databaseChangeLog>
