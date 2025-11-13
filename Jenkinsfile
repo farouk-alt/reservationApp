@@ -2,20 +2,17 @@ pipeline {
 
     agent any
 
-    environment {
-        WORKDIR = "/var/jenkins_home/workspace/ReservationApp-CI"
-    }
-
     stages {
-
-        /* -------------------- BACKEND INSTALL -------------------- */
 
         stage('Backend - Composer install') {
             steps {
                 sh """
+                    echo "Workspace = ${env.WORKSPACE}"
+                    ls -al ${env.WORKSPACE}
+
                     docker run --rm \
                         -u root \
-                        -v ${env.WORKDIR}:/workspace \
+                        -v ${env.WORKSPACE}:/workspace \
                         -w /workspace/backend \
                         composer:2.7 \
                         composer install --no-interaction
@@ -23,14 +20,12 @@ pipeline {
             }
         }
 
-        /* -------------------- BACKEND TESTS -------------------- */
-
         stage('Backend - Run Tests') {
             steps {
                 sh """
                     docker run --rm \
                         -u root \
-                        -v ${env.WORKDIR}:/workspace \
+                        -v ${env.WORKSPACE}:/workspace \
                         -w /workspace/backend \
                         composer:2.7 \
                         vendor/bin/phpunit || true
@@ -38,14 +33,12 @@ pipeline {
             }
         }
 
-        /* -------------------- FRONTEND -------------------- */
-
         stage('Frontend - Install + Build') {
             steps {
                 sh """
                     docker run --rm \
                         -u root \
-                        -v ${env.WORKDIR}:/workspace \
+                        -v ${env.WORKSPACE}:/workspace \
                         -w /workspace/frontend \
                         node:20 \
                         sh -c "npm install && npm run build"
@@ -53,13 +46,11 @@ pipeline {
             }
         }
 
-        /* -------------------- SONAR -------------------- */
-
         stage("SonarQube Analysis") {
             steps {
                 sh """
                     docker run --rm \
-                        -v ${env.WORKDIR}:/workspace \
+                        -v ${env.WORKSPACE}:/workspace \
                         -w /workspace/backend \
                         sonarsource/sonar-scanner-cli \
                         sonar-scanner \
@@ -69,8 +60,6 @@ pipeline {
                 """
             }
         }
-
-        /* -------------------- BUILD DOCKER IMAGES -------------------- */
 
         stage("Build Docker Images") {
             steps {
