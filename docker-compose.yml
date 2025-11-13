@@ -1,6 +1,46 @@
 version: '3.9'
 
 services:
+
+  # ===========================
+  # 1️⃣ Jenkins (CI/CD)
+  # ===========================
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    user: root
+    privileged: true
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
+    networks:
+      - ci_network
+
+  # ===========================
+  # 2️⃣ SonarQube (Code Analysis)
+  # ===========================
+  sonarqube:
+    image: sonarqube:latest
+    container_name: sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    networks:
+      - ci_network
+
+  # ===========================
+  # 3️⃣ Backend (Laravel)
+  # ===========================
   backend:
     build:
       context: ./backend
@@ -11,39 +51,57 @@ services:
       - /var/www/html/vendor
       - /var/www/html/storage/framework
     environment:
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_DATABASE=reservation_db
-      - DB_USERNAME=root                   
-      - DB_PASSWORD=farouk1122              
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: reservation_db
+      DB_USERNAME: root
+      DB_PASSWORD: farouk1122
     depends_on:
       db:
         condition: service_healthy
     command: >
       sh -c "
-        echo '⏳ Waiting for MySQL...';
+        echo 'Waiting for MySQL...';
         until nc -z db 3306; do sleep 2; done;
-        echo '✅ MySQL is ready!';
-        
-        echo '🔑 Generating app key if needed...';
+
         php artisan key:generate --force || true;
-        
-        echo '🗄️ Running migrations...';
         php artisan migrate --force;
-        
-        echo '🧹 Clearing caches...';
+
         php artisan config:clear;
         php artisan cache:clear;
         php artisan route:clear;
         php artisan view:clear;
-        
-        echo '🔗 Creating storage link...';
+
         php artisan storage:link || true;
-        
-        echo '🚀 Starting PHP-FPM...';
+
         php-fpm
       "
+    networks:
+      - ci_network
 
+  # ===========================
+  # 4️⃣ Frontend (React)
+  # ===========================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: react_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+    depends_on:
+      - nginx
+    networks:
+      - ci_network
+
+  # ===========================
+  # 5️⃣ Nginx (Proxy)
+  # ===========================
   nginx:
     image: nginx:alpine
     container_name: nginx_server
@@ -54,7 +112,12 @@ services:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - backend
+    networks:
+      - ci_network
 
+  # ===========================
+  # 6️⃣ MySQL Database
+  # ===========================
   db:
     image: mysql:8.0
     container_name: mysql_db
@@ -72,21 +135,22 @@ services:
       timeout: 3s
       retries: 10
     command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - ci_network
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: react_frontend
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    stdin_open: true
-    tty: true
-    depends_on:
-      - nginx
-
+# ===========================
+# VOLUMES
+# ===========================
 volumes:
+  jenkins_home:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
   db_data:
+
+# ===========================
+# NETWORK
+# ===========================
+networks:
+  ci_network:
+    driver: bridge
