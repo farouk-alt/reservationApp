@@ -3,7 +3,9 @@ services:
   # 1️⃣ Jenkins (CI/CD)
   # ===========================
   jenkins:
-    image: jenkins/jenkins:lts
+    build:
+      context: ./jenkins
+      dockerfile: Dockerfile
     container_name: jenkins
     user: root
     privileged: true
