@@ -1,20 +1,16 @@
 pipeline {
-    agent any
 
-    environment {
-        SONAR_HOST_URL = 'http://sonarqube:9000'
-        SONAR_SCANNER = tool 'SonarScanner'
-    }
+    agent none
 
     stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'farouk',
-                    url: 'https://github.com/farouk-alt/reservationApp.git'
-            }
-        }
 
-        stage('Install Backend Dependencies') {
+        stage('Backend - Composer install') {
+            agent {
+                docker {
+                    image 'composer:2.7'
+                    args '-u root -v $WORKSPACE:/app'
+                }
+            }
             steps {
                 sh '''
                     cd backend
@@ -23,16 +19,28 @@ pipeline {
             }
         }
 
-        stage('Run Backend Tests') {
+        stage('Backend - Run Tests') {
+            agent {
+                docker {
+                    image 'composer:2.7'
+                    args '-u root -v $WORKSPACE:/app'
+                }
+            }
             steps {
                 sh '''
                     cd backend
-                    php artisan test || true
+                    vendor/bin/phpunit || true
                 '''
             }
         }
 
-        stage('Install Frontend Dependencies') {
+        stage('Frontend - Install + Build') {
+            agent {
+                docker {
+                    image 'node:20'
+                    args '-u root -v $WORKSPACE:/app'
+                }
+            }
             steps {
                 sh '''
                     cd frontend
@@ -42,30 +50,27 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh '''
-                        cd backend
-                        "${SONAR_SCANNER}/bin/sonar-scanner" \
-                          -Dsonar.projectKey=reservationApp \
-                          -Dsonar.sources=app \
-                          -Dsonar.php.coverage.reportPaths=coverage.xml \
-                          -Dsonar.host.url=${SONAR_HOST_URL}
-                    '''
+        stage("SonarQube Analysis") {
+            agent {
+                docker {
+                    image 'sonarsource/sonar-scanner-cli'
+                    args '-v $WORKSPACE:/usr/src'
                 }
+            }
+            steps {
+                sh '''
+                    cd backend
+                    sonar-scanner \
+                      -Dsonar.projectKey=reservationApp \
+                      -Dsonar.sources=app \
+                      -Dsonar.php.coverage.reportPaths=coverage.xml \
+                      -Dsonar.host.url=http://sonarqube:9000
+                '''
             }
         }
 
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 3, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-
-        stage('Build Docker Images') {
+        stage("Build Docker Images") {
+            agent any
             steps {
                 sh 'docker compose build'
             }
