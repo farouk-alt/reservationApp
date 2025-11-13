@@ -1,6 +1,6 @@
 pipeline {
 
-    agent none
+    agent any   // <= FIX: ensures WORKSPACE exists
 
     stages {
 
@@ -71,9 +71,7 @@ pipeline {
         stage("Build Docker Images") {
             agent any
             steps {
-                sh '''
-                    docker compose build
-                '''
+                sh 'docker compose build'
             }
         }
     }
