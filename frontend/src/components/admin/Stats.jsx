@@ -232,6 +232,7 @@ function KPI({ title, value, color }) {
     </div>
   );
 }
+//small changes
 
 function SectionTitle({ title }) {
   return (
