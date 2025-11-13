@@ -2,15 +2,14 @@ pipeline {
     agent any
 
     environment {
-        SONAR_HOST_URL = 'http://localhost:9000'
+        SONAR_HOST_URL = 'http://sonarqube:9000'
         SONAR_SCANNER = tool 'SonarScanner'
     }
 
     stages {
-
         stage('Checkout') {
             steps {
-                git branch: 'main',
+                git branch: 'farouk',
                     url: 'https://github.com/farouk-alt/reservationApp.git'
             }
         }
@@ -48,11 +47,11 @@ pipeline {
                 withSonarQubeEnv('SonarQube') {
                     sh '''
                         cd backend
-                        $SONAR_SCANNER/bin/sonar-scanner \
+                        "${SONAR_SCANNER}/bin/sonar-scanner" \
                           -Dsonar.projectKey=reservationApp \
                           -Dsonar.sources=app \
                           -Dsonar.php.coverage.reportPaths=coverage.xml \
-                          -Dsonar.host.url=$SONAR_HOST_URL
+                          -Dsonar.host.url=${SONAR_HOST_URL}
                     '''
                 }
             }
@@ -68,9 +67,7 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
-                sh '''
-                    docker compose build
-                '''
+                sh 'docker compose build'
             }
         }
     }
