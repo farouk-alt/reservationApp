@@ -7,13 +7,9 @@ pipeline {
         stage('Backend - Composer install') {
             steps {
                 sh """
-                    echo "Workspace = ${env.WORKSPACE}"
-                    ls -al ${env.WORKSPACE}
-
                     docker run --rm \
-                        -u root \
-                        -v ${env.WORKSPACE}:/workspace \
-                        -w /workspace/backend \
+                        -v ${WORKSPACE}/backend:/app \
+                        -w /app \
                         composer:2.7 \
                         composer install --no-interaction
                 """
@@ -24,9 +20,8 @@ pipeline {
             steps {
                 sh """
                     docker run --rm \
-                        -u root \
-                        -v ${env.WORKSPACE}:/workspace \
-                        -w /workspace/backend \
+                        -v ${WORKSPACE}/backend:/app \
+                        -w /app \
                         composer:2.7 \
                         vendor/bin/phpunit || true
                 """
@@ -37,9 +32,8 @@ pipeline {
             steps {
                 sh """
                     docker run --rm \
-                        -u root \
-                        -v ${env.WORKSPACE}:/workspace \
-                        -w /workspace/frontend \
+                        -v ${WORKSPACE}/frontend:/app \
+                        -w /app \
                         node:20 \
                         sh -c "npm install && npm run build"
                 """
@@ -50,8 +44,7 @@ pipeline {
             steps {
                 sh """
                     docker run --rm \
-                        -v ${env.WORKSPACE}:/workspace \
-                        -w /workspace/backend \
+                        -v ${WORKSPACE}/backend:/usr/src \
                         sonarsource/sonar-scanner-cli \
                         sonar-scanner \
                           -Dsonar.projectKey=reservationApp \
