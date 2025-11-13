@@ -85,7 +85,7 @@ pipeline {
 
         /* =============================
            5️⃣ BUILD DOCKER IMAGES
-        ================================= */
+        ================================ */
         stage('Build Docker Images') {
             agent {
                 docker {
