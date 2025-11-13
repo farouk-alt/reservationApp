@@ -2,13 +2,19 @@ pipeline {
 
     agent any
 
+    environment {
+        HOST_WS = "/var/lib/docker/volumes/jenkins_home/_data/workspace/ReservationApp-CI"
+    }
+
     stages {
 
         stage('Backend - Composer install') {
             steps {
                 sh """
+                    echo \"Using host path: ${HOST_WS}\"
+
                     docker run --rm \
-                        -v ${WORKSPACE}/backend:/app \
+                        -v ${HOST_WS}/backend:/app \
                         -w /app \
                         composer:2.7 \
                         composer install --no-interaction
@@ -20,7 +26,7 @@ pipeline {
             steps {
                 sh """
                     docker run --rm \
-                        -v ${WORKSPACE}/backend:/app \
+                        -v ${HOST_WS}/backend:/app \
                         -w /app \
                         composer:2.7 \
                         vendor/bin/phpunit || true
@@ -32,7 +38,7 @@ pipeline {
             steps {
                 sh """
                     docker run --rm \
-                        -v ${WORKSPACE}/frontend:/app \
+                        -v ${HOST_WS}/frontend:/app \
                         -w /app \
                         node:20 \
                         sh -c "npm install && npm run build"
@@ -44,7 +50,7 @@ pipeline {
             steps {
                 sh """
                     docker run --rm \
-                        -v ${WORKSPACE}/backend:/usr/src \
+                        -v ${HOST_WS}/backend:/usr/src \
                         sonarsource/sonar-scanner-cli \
                         sonar-scanner \
                           -Dsonar.projectKey=reservationApp \
@@ -59,5 +65,6 @@ pipeline {
                 sh "docker compose build"
             }
         }
+
     }
 }
