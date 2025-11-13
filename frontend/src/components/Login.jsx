@@ -9,38 +9,64 @@ export default function Login({ onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-const handleLogin = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+  // Allowed: letters, numbers, underscores, hyphens, dots
+  const sanitizeUsername = (value) => {
+    return value.replace(/[^A-Za-z0-9._-]/g, "");
+  };
 
-  try {
-    let endpoint = "/employe/login";
-    let role = "employe";
-    let payload = { login, password }; // default
+  // Email validation
+  const validateEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+  // username must contain at least 1 letter (a–z, A–Z)
+  const isValidUsername = (value) => {
+    return /[A-Za-z]/.test(value);
+  };
 
-    if (login === "admin@example.com") {
-      endpoint = "/admin/login";
-      role = "admin";
-      payload = { email: login, password }; // 👈 send email instead
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    // 🚨 If email detected, validate format
+    if (login.includes("@") && !validateEmail(login)) {
+      alert("❌ Adresse email invalide");
+      return;
+    }
+    // If username mode AND invalid (no letter)
+    if (!login.includes("@") && !isValidUsername(login)) {
+      alert("❌ Le nom d'utilisateur doit contenir au moins une lettre.");
+      return;
     }
 
-    const res = await axios.post(endpoint, payload);
-    const userData = res.data[role];
+    setLoading(true);
 
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("role", role);
-    localStorage.setItem("user", JSON.stringify(userData));
+    try {
+      let endpoint = "/employe/login";
+      let role = "employe";
+      let payload = { login, password }; // default
 
-    if (onLoginSuccess) onLoginSuccess(userData, role);
+      if (login === "admin@example.com") {
+        endpoint = "/admin/login";
+        role = "admin";
+        payload = { email: login, password }; // 👈 send email instead
+      }
 
-    navigate(role === "admin" ? "/admin" : "/employe");
-  } catch (err) {
-    console.error(err);
-    alert("⚠️ Identifiants invalides ou problème serveur");
-  } finally {
-    setLoading(false);
-  }
-};
+      const res = await axios.post(endpoint, payload);
+      const userData = res.data[role];
+
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("role", role);
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      if (onLoginSuccess) onLoginSuccess(userData, role);
+
+      navigate(role === "admin" ? "/admin" : "/employe");
+    } catch (err) {
+      console.error(err);
+      alert("⚠️ Identifiants invalides ou problème serveur");
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   return (
@@ -71,7 +97,25 @@ const handleLogin = async (e) => {
             placeholder="Email ou Nom d'utilisateur"
             className="form-control mb-3"
             value={login}
-            onChange={(e) => setLogin(e.target.value)}
+            onChange={(e) => {
+              let value = e.target.value;
+
+              if (value.includes("@")) {
+                // email mode
+                value = value.replace(/[^A-Za-z0-9@._\-+]/g, "");
+              } else {
+                // username mode → sanitize + require 1 letter
+                value = sanitizeUsername(value);
+
+                // block pure numbers
+                if (value && !isValidUsername(value)) {
+                  return; // ignore update if no letters
+                }
+              }
+
+              setLogin(value);
+            }}
+
             required
             style={inputStyle}
           />
@@ -105,6 +149,15 @@ const handleLogin = async (e) => {
           <Link to="/register" style={{ color: "#38BDF8", textDecoration: "none" }}>
             Créer un compte
           </Link>
+          <p className="mt-3">
+            <Link
+              to="/forgot-password"
+              style={{ color: "#38BDF8", textDecoration: "none" }}
+            >
+              Mot de passe oublié ?
+            </Link>
+          </p>
+
         </p>
       </div>
     </div>

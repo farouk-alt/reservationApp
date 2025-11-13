@@ -30,7 +30,7 @@ class AdminAuthController extends Controller
 
         return response()->json([
             'message' => '✅ Admin connecté avec succès',
-            'admin'   => $admin->only(['nom', 'email']),
+            'admin'   => $admin->only(['id','name', 'email']),
             'role'    => 'admin',
             'token'   => $token,
         ]);
@@ -49,7 +49,7 @@ class AdminAuthController extends Controller
         $admin = $request->user();
 
         // Return only safe fields
-        return response()->json($admin->only(['nom', 'email']));
+        return response()->json($admin->only(['name', 'email']));
     }
 
     // ✏️ Update Name
@@ -58,14 +58,14 @@ class AdminAuthController extends Controller
         $admin = $request->user();
 
         $validated = $request->validate([
-            'nom' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
         ]);
 
-        $admin->update(['nom' => $validated['nom']]);
+        $admin->update(['name' => $validated['name']]);
 
         return response()->json([
             'message' => '✅ Nom mis à jour avec succès',
-            'admin' => $admin->only(['nom', 'email']),
+            'admin' => $admin->only(['name', 'email']),
         ]);
     }
 

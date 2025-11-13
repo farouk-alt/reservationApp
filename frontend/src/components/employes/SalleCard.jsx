@@ -1,6 +1,7 @@
 import React from "react";
 
-export default function SalleCard({ salle, onReserve }) {
+export default function SalleCard({ salle, onReserve, onCalendar }) {
+
   const colors = {
     active: "linear-gradient(145deg, #38BDF8, #2563EB)",
     inactive: "linear-gradient(145deg, #64748B, #475569)",
@@ -8,7 +9,7 @@ export default function SalleCard({ salle, onReserve }) {
 
   return (
     <div
-      className="card border-0 shadow-sm"
+      className="card border-0 shadow-sm h-100 d-flex flex-column justify-content-between"
       style={{
         background: "rgba(30,41,59,0.9)",
         borderRadius: "18px",
@@ -16,8 +17,7 @@ export default function SalleCard({ salle, onReserve }) {
         border: "1px solid rgba(56,189,248,0.15)",
         transition: "transform 0.2s ease, box-shadow 0.2s ease",
         width: "100%",
-        maxWidth: "100%",
-        minHeight: "220px",
+        minHeight: "250px", // ✅ add a consistent height
         boxShadow: "0 4px 15px rgba(0,0,0,0.3)",
         cursor: "pointer",
       }}
@@ -81,6 +81,10 @@ export default function SalleCard({ salle, onReserve }) {
             <i className="bi bi-people-fill me-1 text-info"></i>
             Capacité: <strong>{salle.capacite}</strong>
           </p>
+          <p className="text-sm text-info">
+            🕒 {salle.next_available ? `Prochaine dispo : ${salle.next_available}` : ""}
+          </p>
+
 
           {/* 📄 Description */}
           <p
@@ -93,6 +97,7 @@ export default function SalleCard({ salle, onReserve }) {
             Une salle {salle.statut === "active" ? "disponible" : "occupée"}{" "}
             pour vos réunions et projets.
           </p>
+
         </div>
 
         {/* 🔘 Reserve Button */}
@@ -119,6 +124,19 @@ export default function SalleCard({ salle, onReserve }) {
         >
           {salle.statut === "active" ? "Réserver" : "Indisponible"}
         </button>
+        <button
+          className="btn w-100 mt-2 fw-semibold"
+          style={{
+            background: "rgba(56,189,248,0.1)",
+            border: "1px solid rgba(56,189,248,0.4)",
+            color: "#38BDF8",
+            borderRadius: "12px",
+          }}
+          onClick={() => onCalendar?.(salle)}
+        >
+          📅 Voir Calendrier
+        </button>
+
       </div>
     </div>
   );

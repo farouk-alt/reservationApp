@@ -15,7 +15,7 @@ class Reservation extends Model
         'num_salle',
         'date_res',
         'heure_res',
-        'duree',
+        'duree_minutes',
         'statut',
     ];
 

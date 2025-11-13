@@ -15,12 +15,33 @@ export default function Register({ onRegisterSuccess }) {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
 
-const handleSubmit = async (e) => {
+    let cleanValue = value;
+
+    // restrict nom, prenom, departement
+    if (["nom", "prenom", "departement"].includes(name)) {
+      cleanValue = sanitizeText(value);
+    }
+
+    setForm({ ...form, [name]: cleanValue });
+  };
+  const validateEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 🚨 FRONTEND email validation
+    if (!validateEmail(form.email)) {
+      alert("❌ Adresse email invalide. Exemple valable : nom@domaine.com");
+      return;
+    }
+
     setLoading(true);
+
     try {
       const res = await axios.post("/employe/register", form);
 
@@ -42,6 +63,9 @@ const handleSubmit = async (e) => {
     } finally {
       setLoading(false);
     }
+  };
+  const sanitizeText = (value) => {
+    return value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s-]/g, "");
   };
 
   return (

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 
 import Header from "./components/Header";
 import Accueil from "./pages/Accueil";
@@ -7,6 +8,11 @@ import EmployeeDashboard from "./components/employes/EmployeeDashboard";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+
+
+
 
 function App() {
   const [user, setUser] = useState(null);
@@ -60,6 +66,7 @@ function App() {
   return (
     <div style={{ marginTop: "90px" }}>
       <Header user={user} onLogout={handleLogout} />
+      <Toaster position="top-right" />
 
       <Routes>
         <Route path="/" element={<Accueil />} />
@@ -97,6 +104,8 @@ function App() {
 
         {/* Redirect unknown paths */}
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </div>
   );

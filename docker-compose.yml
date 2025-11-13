@@ -14,8 +14,8 @@ services:
       - DB_HOST=db
       - DB_PORT=3306
       - DB_DATABASE=reservation_db
-      - DB_USERNAME=root                    # Change to root
-      - DB_PASSWORD=farouk1122              # Match root password
+      - DB_USERNAME=root                   
+      - DB_PASSWORD=farouk1122              
     depends_on:
       db:
         condition: service_healthy

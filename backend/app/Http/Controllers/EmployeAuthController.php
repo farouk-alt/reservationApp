@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\JsonResponse;
-
+use Illuminate\Support\Facades\Mail;
+use App\Mail\WelcomeUserMail;
 class EmployeAuthController extends Controller
 {
     // 🟢 LOGIN
@@ -30,7 +31,7 @@ class EmployeAuthController extends Controller
 
         return response()->json([
             'message' => '✅ Employé connecté avec succès',
-            'employe' => $employe->only(['nom','prenom','departement','username','email']),
+            'employe' => $employe->only(['id','nom','prenom','departement','username','email']),
             'role'    => 'employe',
             'token'   => $token,
         ]);
@@ -77,7 +78,7 @@ class EmployeAuthController extends Controller
 
         return response()->json([
             'message' => '✅ Profil mis à jour avec succès',
-            'employe' => $employe->only(['nom','prenom','departement','username','email']),
+            'employe' => $employe->only(['id','nom','prenom','departement','username','email']),
         ]);
     }
 
@@ -110,13 +111,13 @@ class EmployeAuthController extends Controller
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
-
         $employe = Employe::create($validated);
         $token = $employe->createToken('employe_token')->plainTextToken;
+        Mail::to($employe->email)->send(new WelcomeUserMail($employe));
 
         return response()->json([
             'message' => '✅ Compte créé et connecté avec succès',
-            'employe' => $employe->only(['nom','prenom','departement','username','email']),
+            'employe' => $employe->only(['id','nom','prenom','departement','username','email']),
             'role'    => 'employe',
             'token'   => $token,
         ]);

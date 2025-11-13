@@ -3,7 +3,7 @@ import axios from "../../api/axios";
 
 export default function Profile() {
   const [admin, setAdmin] = useState({
-    nom: "",
+    name: "",
     email: "",
   });
 
@@ -30,7 +30,7 @@ export default function Profile() {
   const handleProfileUpdate = async () => {
     try {
       setLoading(true);
-      await axios.put("/admin/profile", { nom: admin.nom });
+      await axios.put("/admin/profile", { name: admin.name });
       setMessage("✅ Nom mis à jour avec succès !");
       setEditing(false);
       setError(null);
@@ -83,8 +83,8 @@ export default function Profile() {
             <input
               type="text"
               className="form-control mt-1"
-              value={admin.nom || ""}
-              onChange={(e) => setAdmin({ ...admin, nom: e.target.value })}
+              value={admin.name || ""}
+              onChange={(e) => setAdmin({ ...admin, name: e.target.value })}
               style={{
                 background: "#0f172a",
                 color: "#E2E8F0",
@@ -94,7 +94,7 @@ export default function Profile() {
             />
           ) : (
             <p className="mb-0" style={{ color: "#E2E8F0", marginTop: "5px" }}>
-              {admin.nom || "—"}
+              {admin.name || "—"}
             </p>
           )}
         </div>

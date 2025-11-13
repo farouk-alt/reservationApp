@@ -93,6 +93,9 @@ const EmployeModal = forwardRef(({ onSave }, ref) => {
     setLoading(false);
     bsModal.current.hide();
   };
+  const sanitizeText = (value) => {
+    return value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s-]/g, "");
+  };
 
   return (
     <div
@@ -145,9 +148,8 @@ const EmployeModal = forwardRef(({ onSave }, ref) => {
                   </label>
                   <input
                     type={field === "email" ? "email" : "text"}
-                    className={`form-control ${
-                      errors[field] ? "is-invalid" : ""
-                    }`}
+                    className={`form-control ${errors[field] ? "is-invalid" : ""
+                      }`}
                     style={{
                       background: "rgba(15,23,42,0.8)",
                       color: "#E2E8F0",
@@ -155,9 +157,17 @@ const EmployeModal = forwardRef(({ onSave }, ref) => {
                       borderRadius: "10px",
                     }}
                     value={form[field]}
-                    onChange={(e) =>
-                      setForm({ ...form, [field]: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+
+                      // If it's one of the restricted fields → sanitize
+                      const updatedValue = ["nom", "prenom", "departement"].includes(field)
+                        ? sanitizeText(value)
+                        : value;
+
+                      setForm({ ...form, [field]: updatedValue });
+                    }}
+
                   />
                   {errors[field] && (
                     <div className="invalid-feedback">{errors[field]}</div>
@@ -178,9 +188,8 @@ const EmployeModal = forwardRef(({ onSave }, ref) => {
               </label>
               <input
                 type="password"
-                className={`form-control ${
-                  errors.password ? "is-invalid" : ""
-                }`}
+                className={`form-control ${errors.password ? "is-invalid" : ""
+                  }`}
                 style={{
                   background: "rgba(15,23,42,0.8)",
                   color: "#E2E8F0",
@@ -236,8 +245,8 @@ const EmployeModal = forwardRef(({ onSave }, ref) => {
               {loading
                 ? "⏳ Enregistrement..."
                 : editingId
-                ? "💾 Enregistrer"
-                : "➕ Ajouter"}
+                  ? "💾 Enregistrer"
+                  : "➕ Ajouter"}
             </button>
           </div>
         </div>
