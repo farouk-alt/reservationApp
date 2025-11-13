@@ -1,6 +1,6 @@
 pipeline {
 
-    agent any   // <= FIX: ensures WORKSPACE exists
+    agent none
 
     stages {
 
@@ -8,12 +8,12 @@ pipeline {
             agent {
                 docker {
                     image 'composer:2.7'
-                    args "--entrypoint='' -u root -v ${env.WORKSPACE}:/app"
+                    args '-u root -v /var/jenkins_home/workspace/ReservationApp-CI:/workspace'
                 }
             }
             steps {
                 sh '''
-                    cd /app/backend
+                    cd /workspace/backend
                     composer install --no-interaction
                 '''
             }
@@ -23,12 +23,12 @@ pipeline {
             agent {
                 docker {
                     image 'composer:2.7'
-                    args "--entrypoint='' -u root -v ${env.WORKSPACE}:/app"
+                    args '-u root -v /var/jenkins_home/workspace/ReservationApp-CI:/workspace'
                 }
             }
             steps {
                 sh '''
-                    cd /app/backend
+                    cd /workspace/backend
                     vendor/bin/phpunit || true
                 '''
             }
@@ -38,12 +38,12 @@ pipeline {
             agent {
                 docker {
                     image 'node:20'
-                    args "--entrypoint='' -u root -v ${env.WORKSPACE}:/app"
+                    args '-u root -v /var/jenkins_home/workspace/ReservationApp-CI:/workspace'
                 }
             }
             steps {
                 sh '''
-                    cd /app/frontend
+                    cd /workspace/frontend
                     npm install
                     npm run build
                 '''
@@ -54,12 +54,12 @@ pipeline {
             agent {
                 docker {
                     image 'sonarsource/sonar-scanner-cli'
-                    args "--entrypoint='' -v ${env.WORKSPACE}:/usr/src"
+                    args '-u root -v /var/jenkins_home/workspace/ReservationApp-CI:/workspace'
                 }
             }
             steps {
                 sh '''
-                    cd /usr/src/backend
+                    cd /workspace/backend
                     sonar-scanner \
                       -Dsonar.projectKey=reservationApp \
                       -Dsonar.sources=app \
@@ -71,7 +71,10 @@ pipeline {
         stage("Build Docker Images") {
             agent any
             steps {
-                sh 'docker compose build'
+                sh '''
+                    cd /var/jenkins_home/workspace/ReservationApp-CI
+                    docker compose build
+                '''
             }
         }
     }
