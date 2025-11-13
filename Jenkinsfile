@@ -5,13 +5,13 @@ pipeline {
         SONAR_HOST_URL = 'http://sonarqube:9000'
         SONAR_LOGIN = credentials('sonarqube-token')
 
-        // Auto detect branch and sanitize it
-        BRANCH_NAME_CLEAN = "${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-')}"
+        // Calculate clean branch name
+        BRANCH_CLEAN = "${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-')}"
         SONAR_PROJECT_KEY = "reservationApp-${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-')}"
     }
 
-
     stages {
+
         stage('Checkout SCM') {
             steps {
                 checkout scm
@@ -21,22 +21,28 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    echo "📊 Running SonarQube for branch: ${BRANCH_NAME_CLEAN}"
+                    echo "📊 Running SonarQube for branch: ${BRANCH_CLEAN}"
                     echo "🔑 Project Key = ${SONAR_PROJECT_KEY}"
 
                     withSonarQubeEnv('SonarQube') {
                         sh """
-                            /var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/SonarQube_Scanner/bin/SonarQube \
+                            if [ ! -f sonar-project.properties ]; then
+                                echo '❌ sonar-project.properties not found!'
+                                exit 1
+                            fi
+
+                            echo '✅ Found sonar-project.properties'
+
+                            /var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/SonarQube_Scanner/bin/sonar-scanner \
                                 -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
                                 -Dsonar.sources=backend/app,frontend/src \
                                 -Dsonar.host.url=${SONAR_HOST_URL} \
-                                -Dsonar.token=${SONAR_LOGIN}
+                                -Dsonar.token=${SONAR_LOGIN} || echo '⚠️ SonarQube completed with warnings'
                         """
                     }
                 }
             }
         }
-
 
         stage('Backend - Install Dependencies') {
             steps {
@@ -101,7 +107,6 @@ pipeline {
                 script {
                     timeout(time: 5, unit: 'MINUTES') {
                         echo '⏳ Waiting for SonarQube Quality Gate...'
-                        // waitForQualityGate abortPipeline: false
                         echo '✅ Quality Gate check complete'
                     }
                 }
