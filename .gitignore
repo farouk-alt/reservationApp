@@ -1,23 +1,27 @@
-# Node & Composer
-node_modules/
-vendor/
+# Laravel Backend
+backend/vendor/
+backend/node_modules/
+backend/.env
+backend/storage/*.key
+backend/.phpunit.result.cache
+backend/bootstrap/cache/*
 
-# Environment
-.env
-.env.local
-.env.development.local
-.env.production.local
+# React Frontend  
+frontend/node_modules/
+frontend/build/
+frontend/.env
 
-# Docker
-docker-data/
-*.pid
-
-# Build files
-frontend/dist
-backend/storage/logs/*.log
-backend/bootstrap/cache/*.php
-
-# IDE / OS files
+# IDE
 .vscode/
+.idea/
+
+# OS
 .DS_Store
 Thumbs.db
+
+# Docker
+.docker/
+
+# Logs
+*.log
+npm-debug.log*
