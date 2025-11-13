@@ -18,7 +18,7 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
+       stage('SonarQube Analysis') {
             steps {
                 script {
                     echo "📊 Running SonarQube for branch: ${BRANCH_CLEAN}"
@@ -35,14 +35,14 @@ pipeline {
 
                             /var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/SonarQube_Scanner/bin/sonar-scanner \
                                 -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                                -Dsonar.sources=backend/app,frontend/src \
                                 -Dsonar.host.url=${SONAR_HOST_URL} \
-                                -Dsonar.token=${SONAR_LOGIN} || echo '⚠️ SonarQube completed with warnings'
+                                -Dsonar.token=${SONAR_LOGIN}
                         """
                     }
                 }
             }
         }
+
 
         stage('Backend - Install Dependencies') {
             steps {
