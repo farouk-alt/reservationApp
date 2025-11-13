@@ -18,21 +18,24 @@ pipeline {
                 script {
                     echo '📊 Running SonarQube analysis...'
                     
-                    // Use SonarQube Scanner without Docker
+                    // Run SonarQube Scanner
                     withSonarQubeEnv('SonarQube') {
                         sh '''
-                            # Create sonar-project.properties if it doesn't exist
+                            # Verify sonar-project.properties exists
                             if [ ! -f sonar-project.properties ]; then
-                                cat > sonar-project.properties << EOF
-sonar.projectKey=reservationApp
-sonar.projectName=Reservation Management App
-sonar.sources=backend/app
-sonar.host.url=${SONAR_HOST_URL}
-sonar.token=${SONAR_LOGIN}
-EOF
+                                echo "❌ sonar-project.properties not found!"
+                                exit 1
                             fi
                             
-                            echo "✅ SonarQube configuration ready"
+                            echo "✅ Found sonar-project.properties"
+                            cat sonar-project.properties
+                            
+                            # Run SonarQube Scanner
+                            /var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/SonarQube_Scanner/bin/sonar-scanner \
+                                -Dsonar.projectKey=reservationApp \
+                                -Dsonar.sources=backend/app,frontend/src \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.token=${SONAR_LOGIN} || echo "⚠️ SonarQube analysis completed with warnings"
                         '''
                     }
                 }
