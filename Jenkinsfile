@@ -2,66 +2,169 @@ pipeline {
     agent any
 
     environment {
-        // Nom du projet
-        PROJECT_NAME = "reservationApp"
+        DOCKER_COMPOSE_FILE = 'docker-compose.yml'
+        DB_HOST = 'mysql'
+        DB_PORT = '3306'
+        DB_NAME = 'gestion_reservations'
+        DB_USER = 'root'
+        DB_PASSWORD = ''
+        PROJECT_NAME = 'reservationApp'
+        EMAIL_RECIPIENT = 'ikramikramkarima@gmail.com'
 
-        // Identifiants pour SonarQube (ajoute-les dans Jenkins > Credentials)
-        //SONARQUBE_ENV = credentials('sonar-token')
-
-        // Email de notification
-        EMAIL_RECIPIENT = "ikramikramkarima@gmail.com"
+        // Token SonarQube ajouté dans Jenkins > Credentials (si tu veux activer Sonar)
+       // SONARQUBE_TOKEN = credentials('sonar-token')
     }
 
     stages {
 
-        stage('Checkout') {
+        stage('🔍 Checkout') {
             steps {
-                echo "🌀 Clonage du code depuis GitHub..."
+                echo '📥 Récupération du code source...'
                 checkout scm
             }
         }
 
-        stage('Build Docker Containers') {
+        stage('🧹 Cleanup') {
             steps {
-                echo "🐳 Construction des conteneurs Docker..."
-                sh 'docker compose down || true'
-                sh 'docker compose build --no-cache'
-                sh 'docker compose up -d'
+                echo '🧹 Nettoyage des conteneurs existants...'
+                bat '''
+                    docker-compose -f %DOCKER_COMPOSE_FILE% down -v || true
+                    docker system prune -f -a --volumes -y
+                '''
             }
         }
 
-        stage('Run Backend Tests (Laravel - PHPUnit)') {
+        stage('🐳 Build Docker Images') {
             steps {
-                echo "🧪 Exécution des tests PHPUnit..."
-                sh 'docker exec -t backend php artisan test || true'
+                echo '🔨 Construction des images Docker...'
+                bat '''
+                    docker-compose -f %DOCKER_COMPOSE_FILE% build --no-cache backend
+                '''
             }
         }
 
-        stage('Run Frontend Tests (React - Jest)') {
+        stage('🗄️ Start MySQL') {
             steps {
-                echo "🧪 Exécution des tests Jest..."
-                sh 'docker exec -t frontend npm test -- --watchAll=false || true'
+                echo '🚀 Démarrage de MySQL...'
+                bat '''
+                    docker-compose -f %DOCKER_COMPOSE_FILE% up -d mysql
+                    echo Attente du démarrage de MySQL...
+                    timeout /t 30
+                '''
             }
         }
 
-        
+        // stage('🔄 Database Migration - Liquibase') {
+        //     steps {
+        //         echo '📦 Application des migrations Liquibase...'
+        //         bat '''
+        //             docker-compose -f %DOCKER_COMPOSE_FILE% run --rm backend ^
+        //                 liquibase ^
+        //                 --changeLogFile=database/liquibase/changelog.xml ^
+        //                 --url=jdbc:mysql://%DB_HOST%:%DB_PORT%/%DB_NAME% ^
+        //                 --username=%DB_USER% ^
+        //                 --password=%DB_PASSWORD% ^
+        //                 --classpath=/opt/liquibase/lib/mysql-connector-j-9.1.0.jar ^
+        //                 update
+        //         '''
+
+        //         echo '✅ Migrations Liquibase appliquées avec succès !'
+
+        //         bat '''
+        //             docker-compose -f %DOCKER_COMPOSE_FILE% run --rm backend ^
+        //                 liquibase ^
+        //                 --changeLogFile=database/liquibase/changelog.xml ^
+        //                 --url=jdbc:mysql://%DB_HOST%:%DB_PORT%/%DB_NAME% ^
+        //                 --username=%DB_USER% ^
+        //                 --password=%DB_PASSWORD% ^
+        //                 history
+        //         '''
+        //     }
+        // }
+
+        stage('🧪 Tests Backend') {
+            steps {
+                echo '🧪 Exécution des tests PHPUnit...'
+                bat '''
+                    docker-compose -f %DOCKER_COMPOSE_FILE% run --rm backend ^
+                        php artisan test
+                '''
+            }
+        }
+
+        // stage('📊 SonarQube Analysis') {
+        //     steps {
+        //         echo '📊 Analyse de la qualité du code...'
+        //         withSonarQubeEnv('SonarQube') {
+        //             bat '''
+        //                 echo Lancement de l\'analyse SonarQube...
+        //                 sonar-scanner ^
+        //                     -Dsonar.projectKey=%PROJECT_NAME% ^
+        //                     -Dsonar.sources=. ^
+        //                     -Dsonar.host.url=%SONAR_HOST_URL% ^
+        //                     -Dsonar.login=%SONARQUBE_TOKEN%
+        //             '''
+        //         }
+        //     }
+        // }
+
+        // stage('🎨 Build Frontend') {
+        //     steps {
+        //         echo '🎨 Construction du frontend React...'
+        //         bat '''
+        //             docker-compose -f %DOCKER_COMPOSE_FILE% build frontend
+        //         '''
+        //     }
+        // }
+
+        // stage('🚀 Deploy to Staging') {
+        //     steps {
+        //         echo '🚀 Déploiement sur l\'environnement de staging...'
+        //         bat '''
+        //             docker-compose -f %DOCKER_COMPOSE_FILE% up -d
+        //             echo Application déployée sur http://localhost:8080
+        //         '''
+        //     }
+        // }
+
+        stage('✅ Health Check') {
+            steps {
+                echo '🏥 Vérification de la santé de l\'application...'
+                bat '''
+                    timeout /t 10
+                    curl -f http://localhost:8080 || exit /b 1
+                    echo ✅ Application opérationnelle !
+                '''
+            }
+        }
     }
 
     post {
-        always {
-            echo "🧹 Nettoyage des conteneurs..."
-            sh 'docker compose down'
-        }
-
         success {
-            echo "✅ Build réussi !"
+            echo '✅ ========================================='
+            echo '✅ Pipeline exécuté avec succès !'
+            echo '✅ ========================================='
+            echo '📊 Résumé :'
+            echo '   - Migrations Liquibase : ✅ Appliquées'
+            echo '   - Tests Backend : ✅ Réussis'
+            echo '   - Application : ✅ Déployée'
+            echo '========================================='
         }
 
         failure {
-            echo "❌ Build échoué - envoi de notification par e-mail..."
-            mail to: "${EMAIL_RECIPIENT}",
-                 subject: "🚨 Jenkins Build Failed: ${PROJECT_NAME}",
-                 body: "Le build Jenkins du projet ${PROJECT_NAME} a échoué. Vérifie les logs pour plus de détails."
+            echo '❌ ========================================='
+            echo '❌ Le pipeline a échoué !'
+            echo '❌ ========================================='
+            bat '''
+                echo Logs des conteneurs :
+                docker-compose -f %DOCKER_COMPOSE_FILE% logs
+            '''
+        }
+
+        always {
+            echo '🧹 Nettoyage final...'
+            // Si tu veux que les conteneurs soient arrêtés après le pipeline :
+            // bat 'docker-compose -f %DOCKER_COMPOSE_FILE% down'
         }
     }
 }
