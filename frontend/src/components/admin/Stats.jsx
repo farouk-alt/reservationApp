@@ -215,7 +215,7 @@ function computeStats(all) {
 
 /* -------------------------------------------------
    UI COMPONENTS — KPI, CHARTS, TITLES
------------------------------------------------------- */
+---------------------------------------------- */
 
 function KPI({ title, value, color }) {
   return (
