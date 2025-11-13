@@ -4,7 +4,12 @@ pipeline {
     environment {
         SONAR_HOST_URL = 'http://sonarqube:9000'
         SONAR_LOGIN = credentials('sonarqube-token')
+
+        // Auto detect branch and sanitize it
+        BRANCH_NAME_CLEAN = "${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-')}"
+        SONAR_PROJECT_KEY = "reservationApp-${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-')}"
     }
+
 
     stages {
         stage('Checkout SCM') {
@@ -16,31 +21,22 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    echo '📊 Running SonarQube analysis...'
-                    
-                    // Run SonarQube Scanner
+                    echo "📊 Running SonarQube for branch: ${BRANCH_NAME_CLEAN}"
+                    echo "🔑 Project Key = ${SONAR_PROJECT_KEY}"
+
                     withSonarQubeEnv('SonarQube') {
-                        sh '''
-                            # Verify sonar-project.properties exists
-                            if [ ! -f sonar-project.properties ]; then
-                                echo "❌ sonar-project.properties not found!"
-                                exit 1
-                            fi
-                            
-                            echo "✅ Found sonar-project.properties"
-                            cat sonar-project.properties
-                            
-                            # Run SonarQube Scanner
+                        sh """
                             /var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/SonarQube_Scanner/bin/sonar-scanner \
-                                -Dsonar.projectKey=reservationApp \
+                                -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
                                 -Dsonar.sources=backend/app,frontend/src \
                                 -Dsonar.host.url=${SONAR_HOST_URL} \
-                                -Dsonar.token=${SONAR_LOGIN} || echo "⚠️ SonarQube analysis completed with warnings"
-                        '''
+                                -Dsonar.token=${SONAR_LOGIN}
+                        """
                     }
                 }
             }
         }
+
 
         stage('Backend - Install Dependencies') {
             steps {
