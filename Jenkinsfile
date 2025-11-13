@@ -1,80 +1,80 @@
 pipeline {
 
-    agent none
+    agent any
+
+    environment {
+        WORKDIR = "/var/jenkins_home/workspace/ReservationApp-CI"
+    }
 
     stages {
 
+        /* -------------------- BACKEND INSTALL -------------------- */
+
         stage('Backend - Composer install') {
-            agent {
-                docker {
-                    image 'composer:2.7'
-                    args '-u root -v /var/jenkins_home/workspace/ReservationApp-CI:/workspace'
-                }
-            }
             steps {
-                sh '''
-                    cd /workspace/backend
-                    composer install --no-interaction
-                '''
+                sh """
+                    docker run --rm \
+                        -u root \
+                        -v ${env.WORKDIR}:/workspace \
+                        -w /workspace/backend \
+                        composer:2.7 \
+                        composer install --no-interaction
+                """
             }
         }
+
+        /* -------------------- BACKEND TESTS -------------------- */
 
         stage('Backend - Run Tests') {
-            agent {
-                docker {
-                    image 'composer:2.7'
-                    args '-u root -v /var/jenkins_home/workspace/ReservationApp-CI:/workspace'
-                }
-            }
             steps {
-                sh '''
-                    cd /workspace/backend
-                    vendor/bin/phpunit || true
-                '''
+                sh """
+                    docker run --rm \
+                        -u root \
+                        -v ${env.WORKDIR}:/workspace \
+                        -w /workspace/backend \
+                        composer:2.7 \
+                        vendor/bin/phpunit || true
+                """
             }
         }
+
+        /* -------------------- FRONTEND -------------------- */
 
         stage('Frontend - Install + Build') {
-            agent {
-                docker {
-                    image 'node:20'
-                    args '-u root -v /var/jenkins_home/workspace/ReservationApp-CI:/workspace'
-                }
-            }
             steps {
-                sh '''
-                    cd /workspace/frontend
-                    npm install
-                    npm run build
-                '''
+                sh """
+                    docker run --rm \
+                        -u root \
+                        -v ${env.WORKDIR}:/workspace \
+                        -w /workspace/frontend \
+                        node:20 \
+                        sh -c "npm install && npm run build"
+                """
             }
         }
+
+        /* -------------------- SONAR -------------------- */
 
         stage("SonarQube Analysis") {
-            agent {
-                docker {
-                    image 'sonarsource/sonar-scanner-cli'
-                    args '-u root -v /var/jenkins_home/workspace/ReservationApp-CI:/workspace'
-                }
-            }
             steps {
-                sh '''
-                    cd /workspace/backend
-                    sonar-scanner \
-                      -Dsonar.projectKey=reservationApp \
-                      -Dsonar.sources=app \
-                      -Dsonar.host.url=http://sonarqube:9000
-                '''
+                sh """
+                    docker run --rm \
+                        -v ${env.WORKDIR}:/workspace \
+                        -w /workspace/backend \
+                        sonarsource/sonar-scanner-cli \
+                        sonar-scanner \
+                          -Dsonar.projectKey=reservationApp \
+                          -Dsonar.sources=app \
+                          -Dsonar.host.url=http://sonarqube:9000
+                """
             }
         }
 
+        /* -------------------- BUILD DOCKER IMAGES -------------------- */
+
         stage("Build Docker Images") {
-            agent any
             steps {
-                sh '''
-                    cd /var/jenkins_home/workspace/ReservationApp-CI
-                    docker compose build
-                '''
+                sh "docker compose build"
             }
         }
     }
