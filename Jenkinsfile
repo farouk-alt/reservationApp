@@ -12,7 +12,7 @@ pipeline {
         EMAIL_RECIPIENT = 'ikramikramkarima@gmail.com'
 
         // Token SonarQube ajouté dans Jenkins > Credentials (si tu veux activer Sonar)
-       // SONARQUBE_TOKEN = credentials('sonar-token')
+        // SONARQUBE_TOKEN = credentials('sonar-token')
     }
 
     stages {
@@ -108,14 +108,14 @@ pipeline {
         //     }
         // }
 
-        // stage('🎨 Build Frontend') {
-        //     steps {
-        //         echo '🎨 Construction du frontend React...'
-        //         bat '''
-        //             docker-compose -f %DOCKER_COMPOSE_FILE% build frontend
-        //         '''
-        //     }
-        // }
+        stage('🎨 Build Frontend') {
+            steps {
+                echo '🎨 Construction du frontend React...'
+                bat '''
+                    docker-compose -f %DOCKER_COMPOSE_FILE% build frontend
+                '''
+            }
+        }
 
         // stage('🚀 Deploy to Staging') {
         //     steps {
