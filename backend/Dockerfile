@@ -1,65 +1,58 @@
-# Stage 1: Build composer dependencies
-FROM composer:2 AS vendor
+# ==========================================
+# Dockerfile pour Backend Laravel + Liquibase
+# ==========================================
 
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-progress --prefer-dist --optimize-autoloader
+FROM php:8.2-fpm
 
-# Stage 2: PHP runtime
-FROM php:8.3-fpm
-
-# Install system dependencies
+# Installer les dépendances système
 RUN apt-get update && apt-get install -y \
-<<<<<<< HEAD
-    git curl zip unzip libpng-dev libonig-dev libxml2-dev libzip-dev netcat-openbsd \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    wget \
+    default-jre \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions (including opcache)
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip opcache
+# Installer les extensions PHP
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
-# Configure opcache for development
-RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini \
-    && echo "opcache.revalidate_freq=0" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini \
-    && echo "opcache.validate_timestamps=1" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini
-=======
-    git curl zip unzip libpng-dev libonig-dev libxml2-dev && \
-    docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
->>>>>>> b559aaa (Add Jenkinsfile for Jenkins pipeline)
+# Installer Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy composer from build stage
-COPY --from=vendor /usr/bin/composer /usr/bin/composer
+# ==========================================
+# Installer Liquibase
+# ==========================================
+RUN wget https://github.com/liquibase/liquibase/releases/download/v5.0.1/liquibase-5.0.1.zip -O /tmp/liquibase.zip \
+    && unzip /tmp/liquibase.zip -d /opt/liquibase \
+    && rm /tmp/liquibase.zip \
+    && chmod +x /opt/liquibase/liquibase
 
-# Set working directory
+# Télécharger le driver MySQL pour Liquibase
+RUN wget https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/9.1.0/mysql-connector-j-9.1.0.jar \
+    -O /opt/liquibase/lib/mysql-connector-j-9.1.0.jar
+
+# Ajouter Liquibase au PATH
+ENV PATH="${PATH}:/opt/liquibase"
+
+# Définir le répertoire de travail
 WORKDIR /var/www/html
 
-<<<<<<< HEAD
-# Copy composer files first (better caching)
-COPY composer*.json ./
+# Copier les fichiers du projet
+COPY . /var/www/html
 
-# Install PHP dependencies (will be overridden by volume in dev)
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts || true
+# Installer les dépendances Laravel
+RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-# Copy application code
-COPY . .
+# Donner les permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/storage \
+    && chmod -R 755 /var/www/html/bootstrap/cache
 
-# Set proper permissions
-RUN mkdir -p storage/framework/{sessions,views,cache} \
-    && mkdir -p bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
-
-=======
-# Copy the application
-COPY . .
-
-# Install PHP dependencies (in case vendor was not copied)
-RUN composer install --no-dev --no-scripts --no-progress --prefer-dist --optimize-autoloader || true
-
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-
-# Expose PHP-FPM port
->>>>>>> b559aaa (Add Jenkinsfile for Jenkins pipeline)
+# Exposer le port
 EXPOSE 9000
 
 CMD ["php-fpm"]
