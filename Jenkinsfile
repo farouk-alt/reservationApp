@@ -8,7 +8,7 @@ pipeline {
             agent {
                 docker {
                     image 'composer:2.7'
-                    args "--entrypoint='' -u root -v ${WORKSPACE}:/app"
+                    args "--entrypoint='' -u root -v ${env.WORKSPACE}:/app"
                 }
             }
             steps {
@@ -23,7 +23,7 @@ pipeline {
             agent {
                 docker {
                     image 'composer:2.7'
-                    args "--entrypoint='' -u root -v ${WORKSPACE}:/app"
+                    args "--entrypoint='' -u root -v ${env.WORKSPACE}:/app"
                 }
             }
             steps {
@@ -38,7 +38,7 @@ pipeline {
             agent {
                 docker {
                     image 'node:20'
-                    args "--entrypoint='' -u root -v ${WORKSPACE}:/app"
+                    args "--entrypoint='' -u root -v ${env.WORKSPACE}:/app"
                 }
             }
             steps {
@@ -54,7 +54,7 @@ pipeline {
             agent {
                 docker {
                     image 'sonarsource/sonar-scanner-cli'
-                    args "--entrypoint='' -v ${WORKSPACE}:/usr/src"
+                    args "--entrypoint='' -v ${env.WORKSPACE}:/usr/src"
                 }
             }
             steps {
