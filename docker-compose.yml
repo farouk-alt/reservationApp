@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
 
   # MySQL pour Laravel
@@ -87,7 +85,7 @@ services:
 
   # PostgreSQL pour SonarQube
   postgres_sonar:
-    image: postgres:15-alpine
+    image: postgres:15
     container_name: reservation-postgres
     restart: always
     environment:
