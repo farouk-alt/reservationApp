@@ -1,0 +1,11 @@
+FROM php:8.3-cli
+
+RUN apt-get update && apt-get install -y \
+    default-mysql-client \
+    libzip-dev zip unzip \
+    && docker-php-ext-install pdo pdo_mysql
+
+WORKDIR /app
+
+# Install composer inside the image
+COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer

@@ -1,7 +1,4 @@
-version: '3.9'
-
 services:
-
   # ===========================
   # 1️⃣ Jenkins (CI/CD)
   # ===========================
@@ -19,24 +16,44 @@ services:
     environment:
       JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
     networks:
-      - ci_network
+      - app_network
 
   # ===========================
   # 2️⃣ SonarQube (Code Analysis)
   # ===========================
   sonarqube:
-    image: sonarqube:latest
+    image: sonarqube:community
     container_name: sonarqube
     ports:
       - "9000:9000"
     environment:
       SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+      SONAR_JDBC_URL: jdbc:postgresql://sonar_db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
     volumes:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_extensions:/opt/sonarqube/extensions
       - sonarqube_logs:/opt/sonarqube/logs
+    depends_on:
+      - sonar_db
     networks:
-      - ci_network
+      - app_network
+
+  # ===========================
+  # 2.1 SonarQube Database
+  # ===========================
+  sonar_db:
+    image: postgres:13
+    container_name: sonar_db
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+    volumes:
+      - sonar_db_data:/var/lib/postgresql/data
+    networks:
+      - app_network
 
   # ===========================
   # 3️⃣ Backend (Laravel)
@@ -61,23 +78,23 @@ services:
         condition: service_healthy
     command: >
       sh -c "
-        echo 'Waiting for MySQL...';
+        echo '⏳ Waiting for MySQL...';
         until nc -z db 3306; do sleep 2; done;
-
+        echo '✅ MySQL is ready!';
+        
         php artisan key:generate --force || true;
         php artisan migrate --force;
-
         php artisan config:clear;
         php artisan cache:clear;
         php artisan route:clear;
         php artisan view:clear;
-
         php artisan storage:link || true;
-
+        
+        echo '🚀 Starting PHP-FPM...';
         php-fpm
       "
     networks:
-      - ci_network
+      - app_network
 
   # ===========================
   # 4️⃣ Frontend (React)
@@ -92,12 +109,15 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
     stdin_open: true
     tty: true
     depends_on:
       - nginx
     networks:
-      - ci_network
+      - app_network
 
   # ===========================
   # 5️⃣ Nginx (Proxy)
@@ -113,7 +133,7 @@ services:
     depends_on:
       - backend
     networks:
-      - ci_network
+      - app_network
 
   # ===========================
   # 6️⃣ MySQL Database
@@ -136,9 +156,9 @@ services:
       retries: 10
     command: --default-authentication-plugin=mysql_native_password
     networks:
-      - ci_network
+      - app_network
 
-# ===================
+# ===========================
 # VOLUMES
 # ===========================
 volumes:
@@ -146,11 +166,12 @@ volumes:
   sonarqube_data:
   sonarqube_extensions:
   sonarqube_logs:
+  sonar_db_data:
   db_data:
 
 # ===========================
-# NETWORK
+# NETWORK (Single network for all services)
 # ===========================
 networks:
-  ci_network:
+  app_network:
     driver: bridge
