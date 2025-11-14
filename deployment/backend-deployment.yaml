@@ -15,7 +15,8 @@ spec:
       containers:
         - name: backend
           image: faroukelrey19008/backend:latest
-# Jenkins will build this later
+          imagePullPolicy: Always
+
           ports:
             - containerPort: 9000
           env:
