@@ -25,19 +25,12 @@ pipeline {
                     echo "🔑 Project Key = ${SONAR_PROJECT_KEY}"
 
                     withSonarQubeEnv('SonarQube') {
-                        sh """
-                            if [ ! -f sonar-project.properties ]; then
-                                echo '❌ sonar-project.properties not found!'
-                                exit 1
-                            fi
-
-                            echo '✅ Found sonar-project.properties'
-
-                            /var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/SonarQube_Scanner/bin/sonar-scanner \
-                                -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                                -Dsonar.host.url=${SONAR_HOST_URL} \
-                                -Dsonar.token=${SONAR_LOGIN}
-                        """
+                         sh """
+                                sonar-scanner \
+                                    -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                                    -Dsonar.host.url=${SONAR_HOST_URL} \
+                                    -Dsonar.token=${SONAR_LOGIN}
+                            """
                     }
                 }
             }
