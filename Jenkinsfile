@@ -53,18 +53,18 @@ pipeline {
             }
         }
 
-        stage('Liquibase Migration') {
-            steps {
-                dir('backend') {
-                    sh """
-                        liquibase \
-                         --classpath=/usr/lib/mysql-connector-j-8.0.33.jar \
-                          --defaultsFile=liquibase.properties \
-                          update
-                    """
-                }
-            }
-        }
+        // stage('Liquibase Migration') {
+        //     steps {
+        //         dir('backend') {
+        //             sh """
+        //                 liquibase \
+        //                  --classpath=/usr/lib/mysql-connector-j-8.0.33.jar \
+        //                   --defaultsFile=liquibase.properties \
+        //                   update
+        //             """
+        //         }
+        //     }
+        // }
     }
 
     post {
