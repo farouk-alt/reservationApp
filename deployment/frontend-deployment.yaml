@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: farouk/frontend:latest
+          image: faroukelrey19008/frontend:latest
+
           ports:
             - containerPort: 80
 ---

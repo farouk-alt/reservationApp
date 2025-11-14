@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: backend
-          image: farouk/backend:latest  # Jenkins will build this later
+          image: faroukelrey19008/backend:latest
+# Jenkins will build this later
           ports:
             - containerPort: 9000
           env:
