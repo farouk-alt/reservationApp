@@ -105,6 +105,21 @@ pipeline {
                 }
             }
         }
+        stage('Liquibase Migration') {
+            steps {
+                sh '''
+                    echo "🔄 Running Liquibase migrations..."
+                    liquibase \
+                        --url=jdbc:mysql://mysql:3306/reservation_db \
+                        --username=root \
+                        --password=farouk1122 \
+                        --changeLogFile=database/liquibase/changelog.xml \
+                        update
+                '''
+            }
+        }
+
+
     }
 
     post {

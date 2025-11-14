@@ -50,6 +50,13 @@ RUN composer install --no-interaction --optimize-autoloader --no-dev
 # Copy application code (excluding items in .dockerignore)
 COPY . .
 
+# 👉 ADD THIS PART at the end of your Dockerfile
+# Copy Liquibase changelog folder inside the image
+COPY database/liquibase /liquibase/changelog
+
+# Copy liquibase.properties for Kubernetes Jobs
+COPY liquibase.properties /liquibase/liquibase.properties
+
 # Set proper permissions and remove any existing storage link
 RUN rm -f public/storage \
     && mkdir -p storage/framework/{sessions,views,cache} \
@@ -62,3 +69,4 @@ RUN rm -f public/storage \
 EXPOSE 9000
 
 CMD ["php-fpm"]
+

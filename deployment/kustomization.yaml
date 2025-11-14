@@ -10,3 +10,4 @@ resources:
 
   - mysql-deployment.yaml
   - service-mysql.yaml
+  - liquibase-job.yaml
