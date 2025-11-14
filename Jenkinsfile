@@ -58,7 +58,7 @@ pipeline {
                 dir('backend') {
                     sh """
                         liquibase \
-                          --classpath=/usr/lib/mysql-connector-j-9.1.0.jar \
+                         --classpath=/usr/lib/mysql-connector-j-8.0.33.jar \
                           --defaultsFile=liquibase.properties \
                           update
                     """
