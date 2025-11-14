@@ -2,23 +2,23 @@ FROM jenkins/jenkins:lts
 
 USER root
 
+# Install PHP + Composer + NodeJS + sonar-scanner
+RUN apt-get update && apt-get install -y \
+    php php-cli php-mbstring php-xml php-curl php-zip php-mysql \
+    unzip curl wget gnupg build-essential
 
-RUN apt-get update && \
-    apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release && \
-    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
-    apt-get update && \
-    apt-get install -y docker-ce-cli && \
-    rm -rf /var/lib/apt/lists/*
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Install Jenkins plugins
-RUN jenkins-plugin-cli --plugins \
-    workflow-aggregator \
-    git \
-    docker-workflow \
-    pipeline-stage-view \
-    credentials-binding \
-    ws-cleanup \
-    sonar
+# Install NodeJS + npm (latest LTS)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+RUN apt-get install -y nodejs
+
+# Install sonar-scanner CLI
+RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip -O /tmp/sonar.zip \
+    && unzip /tmp/sonar.zip -d /opt \
+    && mv /opt/sonar-scanner-* /opt/sonar-scanner \
+    && ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner
+
 
 USER jenkins
