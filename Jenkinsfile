@@ -56,7 +56,7 @@ pipeline {
                 }
             }
         }
-        stage('Monitoring - Grafana & Prometheus Health Check') {
+        stage('Monitoring - Grafana Health Check') {
             steps {
                 script {
                     sh "echo Starting port-forward..."
