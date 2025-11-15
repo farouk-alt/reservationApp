@@ -59,6 +59,18 @@ pipeline {
         stage('Monitoring - Grafana & Prometheus Health Check') {
             steps {
                 script {
+                    sh "echo Starting port-forward..."
+                    sh "kubectl port-forward -n monitoring service/kube-prometheus-stack-grafana 9090:80 & sleep 5"
+
+                    sh "echo Testing Grafana API..."
+                    sh "curl -f http://localhost:9090/api/health"
+                }
+            }
+        }
+
+        stage('Monitoring - Grafana & Prometheus Health Check') {
+            steps {
+                script {
                     sh """
                         echo "Testing Grafana API..."
                         curl -f ${GRAFANA_URL}/api/health || exit 1
