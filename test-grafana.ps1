@@ -34,7 +34,7 @@ try {
     exit 1
 }
 
-# 5. Test Prometheus datasource
+# 5. Test Prometheus datasource in Grafana
 Write-Host "Testing Prometheus Datasource..."
 
 try {
