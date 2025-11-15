@@ -7,6 +7,10 @@ pipeline {
 
         BRANCH_CLEAN = "${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-')}"
         SONAR_PROJECT_KEY = "reservationApp-${BRANCH_CLEAN}"
+
+        GRAFANA_URL = "http://kube-prometheus-stack-grafana.monitoring.svc.cluster.local:80"
+        PROMETHEUS_PROXY = "/api/datasources/proxy/1/api/v1/query"
+
     }
 
     stages {
@@ -65,6 +69,25 @@ pipeline {
         //         }
         //     }
         // }
+        stage('Monitoring - Grafana & Prometheus Health Check') {
+            steps {
+                script {
+                    sh """
+                        echo "Testing Grafana API..."
+                        curl -f ${GRAFANA_URL}/api/health || exit 1
+                        
+                        echo "Testing Prometheus Datasource..."
+                        curl -f ${GRAFANA_URL}/api/datasources || exit 1
+
+                        echo "Testing Prometheus Metric 'up'..."
+                        curl -f "${GRAFANA_URL}${PROMETHEUS_PROXY}?query=up" || exit 1
+
+                        echo "Monitoring stack is healthy."
+                    """
+                }
+            }
+        }
+
     }
 
     post {
