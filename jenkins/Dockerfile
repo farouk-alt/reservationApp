@@ -50,6 +50,11 @@ RUN curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/sta
     install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl && \
     rm kubectl
 
+# Install Helm
+RUN apt-get update && apt-get install -y curl && \
+    curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+
+
 # ===========================
 # Install Liquibase
 # ===========================
