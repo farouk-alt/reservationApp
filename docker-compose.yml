@@ -2,23 +2,23 @@ services:
   # ===========================
   # 1️⃣ Jenkins (CI/CD)
   # ===========================
-  jenkins:
-    build:
-      context: ./jenkins
-      dockerfile: Dockerfile
-    container_name: jenkins
-    user: root
-    privileged: true
-    ports:
-      - "8080:8080"
-      - "50000:50000"
-    volumes:
-      - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /c/Users/farou/.kube:/root/.kube
-      - /c/Users/farou/.minikube:/root/.minikube
-    networks:
-      - app_network
+  # jenkins:
+  #   build:
+  #     context: ./jenkins
+  #     dockerfile: Dockerfile
+  #   container_name: jenkins_local
+  #   user: root
+  #   privileged: true
+  #   ports:
+  #     - "8080:8080"
+  #     - "50000:50000"
+  #   volumes:
+  #     - jenkins_home:/var/jenkins_home
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - /c/Users/farou/.kube:/root/.kube
+  #     - /c/Users/farou/.minikube:/root/.minikube
+  #   networks:
+  #     - app_network
 
 
   # ===========================
@@ -58,6 +58,17 @@ services:
     networks:
       - app_network
 
+
+  redis:
+    image: redis:7
+    container_name: reservationmanagementapp-redis-1
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    networks:
+      - app_network
+
+
   # ===========================
   # 3️⃣ Backend (Laravel)
   # ===========================
@@ -76,6 +87,8 @@ services:
       DB_DATABASE: reservation_db
       DB_USERNAME: root
       DB_PASSWORD: farouk1122
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
       db:
         condition: service_healthy

@@ -19,6 +19,14 @@ class Kernel extends HttpKernel
         'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
     ];
 
+    protected $middlewareGroups = [
+    'api' => [
+        \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        \App\Http\Middleware\MetricsMiddleware::class,
+    ],
+    ];
+
+
     protected function schedule(Schedule $schedule)
 {
     $schedule->call(function () {

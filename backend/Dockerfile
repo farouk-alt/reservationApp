@@ -11,11 +11,16 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    netcat-openbsd \
     zip \
     unzip \
     wget \
     default-jre \
     && rm -rf /var/lib/apt/lists/*
+
+# 👉 Install Redis extension correctly
+RUN pecl install redis \
+    && docker-php-ext-enable redis
 
 # Installer les extensions PHP
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
@@ -29,7 +34,7 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN wget https://github.com/liquibase/liquibase/releases/download/v5.0.1/liquibase-5.0.1.zip -O /tmp/liquibase.zip \
     && unzip /tmp/liquibase.zip -d /opt/liquibase \
     && rm /tmp/liquibase.zip \
-    && chmod +x /opt/liquibase/liquibase
+    && chmod -x /opt/liquibase/liquibase
 
 # Télécharger le driver MySQL pour Liquibase
 RUN wget https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/9.1.0/mysql-connector-j-9.1.0.jar \
@@ -50,7 +55,6 @@ RUN composer install --no-interaction --optimize-autoloader --no-dev
 # Copy application code (excluding items in .dockerignore)
 COPY . .
 
-# 👉 ADD THIS PART at the end of your Dockerfile
 # Copy Liquibase changelog folder inside the image
 COPY database/liquibase /liquibase/changelog
 
@@ -65,8 +69,7 @@ RUN rm -f public/storage \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# Exposer le port
+# Expose the port
 EXPOSE 9000
 
 CMD ["php-fpm"]
-
