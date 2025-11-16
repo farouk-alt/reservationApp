@@ -51,3 +51,12 @@ RUN curl -L https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-j-8.
     cp mysql-connector-j-8.0.33/mysql-connector-j-8.0.33.jar /usr/lib/
 
 USER jenkins
+USER root
+
+# Install kubectl
+RUN curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" \
+    && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl \
+    && rm kubectl
+
+# Install bash utilities
+RUN apt-get update && apt-get install -y nano iputils-ping netcat-openbsd

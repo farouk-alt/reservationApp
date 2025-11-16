@@ -10,15 +10,12 @@ pipeline {
 
         GRAFANA_URL = "http://kube-prometheus-stack-grafana.monitoring.svc.cluster.local:80"
         PROMETHEUS_PROXY = "/api/datasources/proxy/1/api/v1/query"
-
     }
 
     stages {
 
         stage('Checkout SCM') {
-            steps {
-                checkout scm
-            }
+            steps { checkout scm }
         }
 
         stage('SonarQube Analysis') {
@@ -39,9 +36,7 @@ pipeline {
         stage('Backend - Install Dependencies') {
             steps {
                 dir('backend') {
-                    sh """
-                        composer install --no-interaction --prefer-dist
-                    """
+                    sh "composer install --no-interaction --prefer-dist"
                 }
             }
         }
@@ -56,6 +51,56 @@ pipeline {
                 }
             }
         }
+
+        stage('Wait for Monitoring Stack') {
+            steps {
+                script {
+                    sh """
+                    echo '⏳ Waiting for Prometheus & Alertmanager...'
+
+                    # Wait for Prometheus
+                    until kubectl get pods -n monitoring | grep prometheus-monitoring-kube-prometheus-prometheus | grep '2/2'; do
+                      echo 'Waiting for Prometheus...'
+                      sleep 5
+                    done
+
+                    # Wait for Alertmanager
+                    until kubectl get pods -n monitoring | grep alertmanager-monitoring-kube-prometheus-alertmanager | grep '2/2'; do
+                      echo 'Waiting for Alertmanager...'
+                      sleep 5
+                    done
+
+                    echo '✅ Monitoring stack is fully ready!'
+                    """
+                }
+            }
+        }
+        stage('Redeploy Monitoring Stack') {
+            steps {
+                script {
+                    sh """
+                        echo "🚀 Updating Helm repositories..."
+                        helm repo update
+
+                        echo "🔄 Redeploying Grafana & Prometheus..."
+                        helm upgrade monitoring prometheus-community/kube-prometheus-stack -n monitoring --install
+
+                        echo "⏳ Waiting for Grafana to restart..."
+                        kubectl rollout status deploy/monitoring-grafana -n monitoring --timeout=120s
+
+                        echo "⏳ Waiting for Prometheus to restart..."
+                        kubectl rollout status statefulset/prometheus-monitoring-kube-prometheus-prometheus -n monitoring --timeout=120s
+
+                        echo "⏳ Waiting for Alertmanager to restart..."
+                        kubectl rollout status statefulset/alertmanager-monitoring-kube-prometheus-alertmanager -n monitoring --timeout=120s
+
+                        echo "✅ Monitoring stack redeployed!"
+                    """
+                }
+            }
+        }
+
+
         stage('Monitoring - Grafana Health Check') {
             steps {
                 script {
@@ -90,11 +135,7 @@ pipeline {
     }
 
     post {
-        success {
-            echo '✅ Pipeline completed successfully!'
-        }
-        failure {
-            echo '❌ Pipeline failed!'
-        }
+        success { echo '✅ Pipeline completed successfully!' }
+        failure { echo '❌ Pipeline failed!' }
     }
 }
