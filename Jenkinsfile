@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         SONAR_HOST_URL = 'http://host.docker.internal:9000'
-        SONAR_LOGIN = credentials('sonarqube-token')
+        SONAR_LOGIN = credentials('sonar-token')
 
         BRANCH_CLEAN = "${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-')}"
         SONAR_PROJECT_KEY = "reservationApp-${BRANCH_CLEAN}"
