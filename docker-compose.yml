@@ -15,8 +15,8 @@ services:
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
-      - /c/Users/farou/.kube:/root/.kube
-      - /c/Users/farou/.minikube:/root/.minikube
+      - /home/faroukkarti/.kube:/root/.kube
+      - /home/faroukkarti/.minikube:/root/.minikube
     networks:
       - app_network
 
