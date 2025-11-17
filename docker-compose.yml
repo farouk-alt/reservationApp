@@ -2,23 +2,23 @@ services:
   # ===========================
   # 1️⃣ Jenkins (CI/CD)
   # =======================
-  # jenkins:
-  #   build:
-  #     context: ./jenkins
-  #     dockerfile: Dockerfile
-  #   container_name: jenkins_local
-  #   user: root
-  #   privileged: true
-  #   ports:
-  #     - "8080:8080"
-  #     - "50000:50000"
-  #   volumes:
-  #     - jenkins_home:/var/jenkins_home
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #     - /c/Users/farou/.kube:/root/.kube
-  #     - /c/Users/farou/.minikube:/root/.minikube
-  #   networks:
-  #     - app_network
+  jenkins:
+    build:
+      context: ./jenkins
+      dockerfile: Dockerfile
+    container_name: jenkins_local
+    user: root
+    privileged: true
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /c/Users/farou/.kube:/root/.kube
+      - /c/Users/farou/.minikube:/root/.minikube
+    networks:
+      - app_network
 
 
   # ===========================
