@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        SONAR_HOST_URL = 'http://host.docker.internal:9000'
+        SONAR_HOST_URL = 'http://sonarqube:9000'
         SONAR_LOGIN = credentials('sonarqube-token')
 
         BRANCH_CLEAN = "${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-')}"
@@ -21,7 +21,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    withSonarQubeEnv('sonarqube') {
+                    withSonarQubeEnv('SonarQube') {
                         sh """
                             sonar-scanner \
                                 -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
