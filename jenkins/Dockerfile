@@ -80,6 +80,7 @@ RUN jenkins-plugin-cli --plugins \
     ws-cleanup \
     sonar
 
+
 # Clean up
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
