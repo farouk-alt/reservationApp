@@ -2,7 +2,7 @@ FROM jenkins/inbound-agent:latest
 
 USER root
 
-# Install required packages
+# Install requireds
 RUN apt-get update && apt-get install -y curl unzip
 
 # Install SonarScanner
