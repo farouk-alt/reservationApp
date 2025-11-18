@@ -101,7 +101,7 @@ pipeline {
                         mkdir -p reports/dependency-check
 
                         docker run --rm \
-                            --user 1000:1000 \
+                            --user 0 \
                             -v \$(pwd)/backend:/src \
                             -v \$(pwd)/reports/dependency-check:/report \
                             -e NVD_API_KEY=$NVD \
@@ -114,6 +114,7 @@ pipeline {
                 }
             }
         }
+
 
 
 
@@ -146,22 +147,25 @@ pipeline {
 
         stage('Report to JIRA') {
             steps {
-                sh """
-                    curl -X POST \
-                        -H "Content-Type: application/json" \
-                        -u "farouk.karti@etud.iga.ac.ma:${JIRA_TOKEN}" \
-                        --data '{
-                            "fields": {
-                                "project": {"key": "DEV"},
-                                "summary": "DevSecOps Report - Build #${env.BUILD_NUMBER}",
-                                "description": "Quality Gate: ${QG_STATUS}",
-                                "issuetype": {"name": "Task"}
-                            }
-                        }' \
-                        https://faroukkarti.atlassian.net/rest/api/3/issue
-                """
+                withCredentials([string(credentialsId: 'jira-token', variable: 'JIRA')]) {
+                    sh '''
+                        curl -X POST \
+                            -H "Content-Type: application/json" \
+                            -u "farouk.karti@etud.iga.ac.ma:${JIRA}" \
+                            --data "{
+                                \\"fields\\": {
+                                    \\"project\\": {\\"key\\": \\"DEV\\"},
+                                    \\"summary\\": \\"DevSecOps Report - Build #${BUILD_NUMBER}\\",
+                                    \\"description\\": \\"Quality Gate: ${QG_STATUS}\\",
+                                    \\"issuetype\\": {\\"name\\": \\"Task\\"}
+                                }
+                            }" \
+                        https://faroukkarti.atlassian.net/rest/api/3/issue || true
+                    '''
+                }
             }
         }
+
 
     }
 
