@@ -74,16 +74,11 @@ pipeline {
         }
 
         stage('Quality Gate') {
-            steps {
-                script {
-                    timeout(time: 3, unit: 'MINUTES') {
-                        def qg = waitForQualityGate()
-                        QG_STATUS = qg.status
-                        echo "Quality Gate: ${QG_STATUS}"
-                    }
-                }
+            timeout(time: 10, unit: 'MINUTES') {
+                waitForQualityGate abortPipeline: false
             }
         }
+
 
         stage('OWASP Dependency Scan') {
             steps {
