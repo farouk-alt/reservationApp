@@ -36,10 +36,25 @@ class EmployeController extends Controller
     }
 
     public function update(Request $request, Employe $employe)
-    {
-        $employe->update($request->all());
-        return response()->json($employe, 200);
+{
+    $validated = $request->validate([
+        'nom' => 'sometimes|string|max:55',
+        'prenom' => 'sometimes|string|max:55',
+        'departement' => 'sometimes|string|max:55',
+        'username' => 'sometimes|string|max:55|unique:employes,username,' . $employe->id,
+        'password' => 'sometimes|string|min:6',
+        'email' => 'sometimes|email|unique:employes,email,' . $employe->id,
+    ]);
+
+    if (isset($validated['password'])) {
+        $validated['password'] = Hash::make($validated['password']);
     }
+
+    $employe->update($validated);
+
+    return response()->json($employe, 200);
+}
+
 
     public function destroy(Employe $employe)
     {

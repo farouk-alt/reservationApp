@@ -8,6 +8,9 @@ use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\EmployeAuthController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\AdminController;
+=======
+use App\Services\MetricsService;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -54,5 +57,32 @@ Route::get('/reservations/employe/{num_emp}', [ReservationController::class, 'by
 Route::get('/reservations/salle/{num_salle}', [ReservationController::class, 'bySalle']);
 Route::put('/reservations/{id}/cancel', [ReservationController::class, 'cancel']);
 
+<<<<<<< HEAD
 // Admin stats
 Route::get('/admin/stats', [AdminController::class, 'stats']);
+=======
+});
+
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('reservations', ReservationController::class);
+    Route::get('/reservations/employe/{num_emp}', [ReservationController::class, 'byEmployee']);
+    Route::get('/reservations/salle/{num_salle}', [ReservationController::class, 'bySalle']);
+    Route::put('/reservations/{id}/cancel', [ReservationController::class, 'cancel']);
+
+});
+use App\Http\Controllers\AdminController;
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/admin/stats', [AdminController::class, 'stats']);
+});
+
+Route::get('/test-metric', function () {
+    $metrics = new MetricsService();
+    
+    // Record a sample request with status 200 and 0.1 seconds duration
+    $metrics->recordRequest('GET', '/test-metric', 200, 0.1);
+    
+    return ['ok' => true];
+});
+>>>>>>> 4cc3683f8d3606a37a3933956127571d9f924f16

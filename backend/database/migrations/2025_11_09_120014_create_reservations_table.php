@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->foreignId('num_salle')->constrained('salles')->onDelete('cascade');
             $table->date('date_res');
             $table->time('heure_res');
-            $table->integer('duree_minutes');
+            $table->integer('duree_minutes')->nullable();
             $table->string('statut', 55)->default('en_attente');
             $table->timestamps();
         });
