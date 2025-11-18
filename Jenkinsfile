@@ -147,24 +147,32 @@ pipeline {
 
         stage('Report to JIRA') {
             steps {
-                withCredentials([string(credentialsId: 'jira-token', variable: 'JIRA')]) {
-                    sh '''
-                        curl -X POST \
-                            -H "Content-Type: application/json" \
-                            -u "farouk.karti@etud.iga.ac.ma:${JIRA}" \
-                            --data "{
-                                \\"fields\\": {
-                                    \\"project\\": {\\"key\\": \\"DEV\\"},
-                                    \\"summary\\": \\"DevSecOps Report - Build #${BUILD_NUMBER}\\",
-                                    \\"description\\": \\"Quality Gate: ${QG_STATUS}\\",
-                                    \\"issuetype\\": {\\"name\\": \\"Task\\"}
-                                }
-                            }" \
-                        https://faroukkarti.atlassian.net/rest/api/3/issue || true
-                    '''
+                withCredentials([string(credentialsId: 'jira-token', variable: 'JTOKEN')]) {
+                    script {
+                        def auth = sh(
+                            script: "echo -n '${env.JIRA_EMAIL}:${JTOKEN}' | base64",
+                            returnStdout: true
+                        ).trim()
+
+                        sh """
+                            curl -X POST \
+                                -H "Authorization: Basic ${auth}" \
+                                -H "Content-Type: application/json" \
+                                --data '{
+                                    "fields": {
+                                        "project": {"key": "DEV"},
+                                        "summary": "DevSecOps Report - Build #${env.BUILD_NUMBER}",
+                                        "description": "Quality Gate: ${QG_STATUS}",
+                                        "issuetype": {"name": "Task"}
+                                    }
+                                }' \
+                                https://faroukkarti.atlassian.net/rest/api/3/issue
+                        """
+                    }
                 }
             }
         }
+
 
 
     }
