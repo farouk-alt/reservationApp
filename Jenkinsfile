@@ -1,3 +1,6 @@
+def QG_STATUS = ""
+def qg = ""
+
 pipeline {
 
     agent any
@@ -19,18 +22,55 @@ pipeline {
             }
         }
 
+        stage('Backend - Install Dependencies') {
+            steps {
+                dir('backend') {
+                    sh "composer install --no-interaction --prefer-dist || true"
+                }
+            }
+        }
+
+        stage('Frontend - Install Dependencies') {
+            steps {
+                dir('frontend') {
+                    sh "npm install || true"
+                }
+            }
+        }
+
+        stage('Backend - Run Tests + Coverage') {
+            steps {
+                dir('backend') {
+                    sh """
+                        vendor/bin/phpunit \
+                        --coverage-clover coverage.xml || true
+                    """
+                }
+            }
+        }
+
+        stage('Frontend - Run Tests + Coverage') {
+            steps {
+                dir('frontend') {
+                    sh """
+                        npm run test:coverage || true
+                    """
+                }
+            }
+        }
+
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
                     sh """
-                    sonar-scanner \
-                        -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                        -Dsonar.sources=backend/app,frontend/src \
-                        -Dsonar.php.coverage.reportPaths=backend/coverage.xml \
-                        -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info \
-                        -Dsonar.exclusions=**/vendor/**,**/node_modules/** \
-                        -Dsonar.host.url=${SONAR_HOST_URL} \
-                        -Dsonar.token=${SONAR_LOGIN}
+                        sonar-scanner \
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                            -Dsonar.sources=backend/app,frontend/src \
+                            -Dsonar.php.coverage.reportPaths=backend/coverage.xml \
+                            -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info \
+                            -Dsonar.exclusions=**/vendor/**,**/node_modules/** \
+                            -Dsonar.host.url=${SONAR_HOST_URL} \
+                            -Dsonar.token=${SONAR_LOGIN}
                     """
                 }
             }
@@ -39,9 +79,11 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 script {
-                    qg = waitForQualityGate()
-                    QG_STATUS = qg.status
-                    echo "Quality Gate: ${QG_STATUS}"
+                    timeout(time: 2, unit: 'MINUTES') {
+                        qg = waitForQualityGate()
+                        QG_STATUS = qg.status
+                        echo "Quality Gate: ${QG_STATUS}"
+                    }
                 }
             }
         }
@@ -60,7 +102,7 @@ pipeline {
         stage('Container Scan (Trivy)') {
             steps {
                 sh """
-                    trivy fs backend --format json --output reports/trivy-backend.json
+                    trivy fs backend  --format json --output reports/trivy-backend.json
                     trivy fs frontend --format json --output reports/trivy-frontend.json
                 """
             }
@@ -89,48 +131,36 @@ pipeline {
         stage('Send Report to Jira') {
             steps {
                 script {
+                    def jiraPayload = """
+                    {
+                        "fields": {
+                            "project": {"key": "DEV"},
+                            "summary": "DevSecOps Report - Build #${env.BUILD_NUMBER}",
+                            "description": "Quality Gate: ${QG_STATUS}\\nReports available in Jenkins.",
+                            "issuetype": {"name": "Task"}
+                        }
+                    }
+                    """
+
                     sh """
                     curl -X POST \
                         -H "Content-Type: application/json" \
                         -u "farouk.karti@etud.iga.ac.ma:${JIRA_TOKEN}" \
-                        --data '{
-                            "fields": {
-                                "project": {"key": "DEV"},
-                                "summary": "DevSecOps Report - Build #${env.BUILD_NUMBER}",
-                                "description": "Quality Gate: ${QG_STATUS}",
-                                "issuetype": {"name": "Task"}
-                            }
-                        }' \
+                        --data '${jiraPayload}' \
                         https://faroukkarti.atlassian.net/rest/api/3/issue
                     """
                 }
             }
         }
 
-        stage('Backend - Install Dependencies') {
-            steps {
-                dir('backend') {
-                    sh "composer install --no-interaction --prefer-dist || true"
-                }
-            }
-        }
-
-        stage('Backend - Run Tests') {
-            steps {
-                dir('backend') {
-                    sh "vendor/bin/phpunit --testdox || true"
-                }
-            }
-        }
-
-        stage('Frontend - Install & Build') {
+        stage('Frontend - Build') {
             steps {
                 dir('frontend') {
-                    sh "npm install || true"
                     sh "npm run build || true"
                 }
             }
         }
+
     }
 
     post {
