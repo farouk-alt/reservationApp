@@ -97,8 +97,6 @@ pipeline {
 
        stage('OWASP Dependency Scan') {
             steps {
-                sh "mkdir -p reports/dependency-check"
-
                 withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD')]) {
                     sh '''
                         docker run --rm \
@@ -106,14 +104,19 @@ pipeline {
                             -v "$(pwd)/reports:/report" \
                             -e NVD_API_KEY=$NVD \
                             owasp/dependency-check:latest \
-                            --scan /src \
-                            --format ALL \
-                            --out /report/dependency-check \
-                            --nvdApiKey $NVD
+                            sh -c "
+                                mkdir -p /report/dependency-check &&
+                                dependency-check.sh \
+                                    --scan /src \
+                                    --format ALL \
+                                    --out /report/dependency-check \
+                                    --nvdApiKey $NVD
+                            "
                     '''
                 }
             }
         }
+
 
 
 
