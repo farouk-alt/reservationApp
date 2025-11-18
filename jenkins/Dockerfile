@@ -2,7 +2,7 @@ FROM jenkins/jenkins:lts
 
 USER root
 
-# ===========================
+# ========================
 # Install PHP + Composer + NodeJS
 # ===========================
 RUN apt-get update && apt-get install -y \
