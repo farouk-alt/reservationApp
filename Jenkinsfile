@@ -10,7 +10,6 @@ pipeline {
         SONAR_PROJECT_KEY = "reservationApp-${BRANCH_CLEAN}"
         NVD_API_KEY = credentials('nvd-api-key')
     }
-
     stages {
 
         stage('Checkout') {
