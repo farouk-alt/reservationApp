@@ -1,103 +1,74 @@
 pipeline {
+
     agent any
 
     environment {
         SONAR_HOST_URL = 'http://sonarqube:9000'
         SONAR_LOGIN = credentials('sonarqube-token')
-
-        // Calculate clean branch name
-        BRANCH_CLEAN = "${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-')}"
-        SONAR_PROJECT_KEY = "reservationApp-${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-')}"
+        JIRA_TOKEN = credentials('jira-token')
+        BRANCH_CLEAN = "${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-') ?: 'main'}"
+        SONAR_PROJECT_KEY = "reservationApp-${BRANCH_CLEAN}"
+        NVD_API_KEY = credentials('nvd-api-key')
     }
-
     stages {
 
-        stage('Checkout SCM') {
+        stage('Checkout') {
             steps {
                 checkout scm
-            }
-        }
-
-        stage('SonarQube Analysis') {
-            steps {
-                script {
-                    echo "📊 Running SonarQube for branch: ${BRANCH_CLEAN}"
-                    echo "🔑 Project Key = ${SONAR_PROJECT_KEY}"
-
-                    withSonarQubeEnv('SonarQube') {
-                        sh """
-                            if [ ! -f sonar-project.properties ]; then
-                                echo '❌ sonar-project.properties not found!'
-                                exit 1
-                            fi
-
-                            echo '✅ Found sonar-project.properties'
-
-                            /var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/SonarQube_Scanner/bin/sonar-scanner \
-                                -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                                -Dsonar.sources=backend/app,frontend/src \
-                                -Dsonar.host.url=${SONAR_HOST_URL} \
-                                -Dsonar.token=${SONAR_LOGIN} || echo '⚠️ SonarQube completed with warnings'
-                        """
-                    }
-                }
+                sh "mkdir -p reports"
             }
         }
 
         stage('Backend - Install Dependencies') {
             steps {
                 dir('backend') {
-                    sh '''
-                        echo "📦 Installing Composer dependencies..."
-                        if [ -f composer.json ]; then
-                            composer install --no-interaction --prefer-dist || echo "⚠️ Composer not available in Jenkins"
-                        fi
-                    '''
+                    sh "composer install --no-interaction --prefer-dist || true"
                 }
             }
         }
 
-        stage('Backend - Run Tests') {
+        stage('Backend - Tests + Coverage') {
             steps {
                 dir('backend') {
-                    sh '''
-                        echo "🧪 Running PHPUnit tests..."
-                        if [ -f vendor/bin/phpunit ]; then
-                            vendor/bin/phpunit --testdox || echo "⚠️ Some tests failed"
-                        else
-                            echo "⚠️ PHPUnit not installed"
-                        fi
-                    '''
+                    sh """
+                        php artisan migrate --env=testing --force
+                        echo "Skipping seeding in testing environment"
+                        echo "Running PHPUnit with coverage..."
+                        vendor/bin/phpunit --coverage-clover coverage.xml || true
+                        ls -l coverage.xml || true
+                    """
                 }
             }
         }
 
-        stage('Frontend - Install Dependencies') {
+
+       stage('Frontend - Install + Coverage') {
             steps {
                 dir('frontend') {
-                    sh '''
-                        echo "📦 Installing NPM dependencies..."
-                        if command -v npm &> /dev/null; then
-                            npm install || echo "⚠️ NPM install failed"
-                        else
-                            echo "⚠️ NPM not available in Jenkins"
-                        fi
-                    '''
+                    sh """
+                        npm install
+                        npm test -- --coverage || true
+                        ls -l coverage/lcov.info || true
+                    """
                 }
             }
         }
 
-        stage('Frontend - Build') {
+
+
+        stage('SonarQube Analysis') {
             steps {
-                dir('frontend') {
-                    sh '''
-                        echo "🏗️ Building frontend..."
-                        if command -v npm &> /dev/null; then
-                            npm run build || echo "⚠️ Build failed"
-                        else
-                            echo "⚠️ NPM not available in Jenkins"
-                        fi
-                    '''
+                withSonarQubeEnv('SonarQube') {
+                    sh """
+                    sonar-scanner \
+                        -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                        -Dsonar.sources=backend/app,frontend/src \
+                        -Dsonar.php.coverage.reportPaths=backend/coverage.xml \
+                        -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info \
+                        -Dsonar.exclusions=**/vendor/**,**/node_modules/** \
+                        -Dsonar.host.url=${SONAR_HOST_URL} \
+                        -Dsonar.token=${SONAR_LOGIN}
+                    """
                 }
             }
         }
@@ -105,21 +76,81 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 script {
-                    timeout(time: 5, unit: 'MINUTES') {
-                        echo '⏳ Waiting for SonarQube Quality Gate...'
-                        echo '✅ Quality Gate check complete'
+                    timeout(time: 15, unit: 'MINUTES') {
+                        try {
+                            def qg = waitForQualityGate abortPipeline: false
+                            env.QG_STATUS = qg.status
+                        } catch (Exception e) {
+                            env.QG_STATUS = "TIMEOUT"
+                            echo "Quality Gate check failed: ${e.message}"
+                        }
                     }
                 }
             }
         }
+      stage('OWASP Dependency Scan') {
+            steps {
+                sh """
+                docker run --rm \
+                    -v "\$(pwd)/backend":/src \
+                    -v "\$(pwd)/reports":/reports \
+                    -e NVD_API_KEY=${NVD_API_KEY} \
+                    owasp/dependency-check:latest \
+                    --scan /src \
+                    --format HTML \
+                    --out /reports/dependency-check \
+                    --nvdApiKey ${NVD_API_KEY}
+                """
+            }
+        }
+
+
+
+        stage('Vulnerability Scan (Grype)') {
+            steps {
+                sh """
+                    grype dir:backend -o json > reports/grype-backend.json
+                    grype dir:frontend -o json > reports/grype-frontend.json
+                """
+            }
+        }
+
+
+        stage('Gitleaks') {
+            steps {
+                sh "gitleaks detect --source . --report-path reports/gitleaks.json --no-git"
+            }
+        }
+
+        stage('Semgrep (OWASP Top10)') {
+            steps {
+                sh "semgrep --config owasp-top-ten --json --output reports/semgrep.json ."
+            }
+        }
+
+        stage('Report to JIRA') {
+            steps {
+                sh """
+                curl -X POST \
+                    -H "Content-Type: application/json" \
+                    -u "farouk.karti@etud.iga.ac.ma:${JIRA_TOKEN}" \
+                    --data '{
+                        "fields": {
+                            "project": {"key": "DEV"},
+                            "summary": "DevSecOps Report - Build #${env.BUILD_NUMBER}",
+                            "description": "Quality Gate: ${QG_STATUS}",
+                            "issuetype": {"name": "Task"}
+                        }
+                    }' \
+                    https://faroukkarti.atlassian.net/rest/api/3/issue
+                """
+            }
+        }
+
     }
 
     post {
-        success {
-            echo '✅ Pipeline completed successfully!'
-        }
-        failure {
-            echo '❌ Pipeline failed!'
-        }
+        success { echo "✅ Build OK" }
+        failure { echo "❌ Build Failed" }
     }
 }

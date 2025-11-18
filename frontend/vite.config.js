@@ -7,11 +7,12 @@ export default defineConfig({
    test: {
     globals: true,
     environment: "happy-dom",
-    setupFiles: "./src/setupTests.js", // ✅ must match the actual file name and path
+    setupFiles: "./src/setupTests.js", 
     css: false,
     coverage: {
       provider: "v8",
-      reporter: ["text", "html"],
+      reporter: ["text", "lcov"],
+      reportsDirectory: "coverage",
     },
   },
   server: {

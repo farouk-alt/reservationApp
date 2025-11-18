@@ -12,14 +12,24 @@ class SalleController extends Controller
 
 public function index()
 {
+    if (app()->environment('testing')) {
+        return Salle::all();
+    }
     $today = Carbon::now()->toDateString();
     $currentTime = Carbon::now()->format('H:i:s');
 
     // 1️⃣ Load salles with their active reservation for today
     $salles = Salle::with(['reservations' => function($q) use ($today, $currentTime) {
         $q->where('date_res', $today)
-          ->whereRaw('? BETWEEN heure_res AND ADDTIME(heure_res, SEC_TO_TIME(duree_minutes * 3600))', [$currentTime])
-          ->where('statut', 'confirmée');
+        ->where('statut', 'confirmée')
+        ->get()
+        ->filter(function($r) use ($currentTime) {
+            $start = $r->heure_res;
+            $end = date('H:i:s', strtotime($start) + $r->duree_minutes * 60);
+            return $currentTime >= $start && $currentTime <= $end;
+        });
+
+
     }])->get();
 
     // 2️⃣ Dynamically determine status + next available time

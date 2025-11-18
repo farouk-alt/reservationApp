@@ -1,0 +1,36 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: reservation-app-rules
+  namespace: monitoring
+spec:
+  groups:
+  - name: reservation-app.rules
+    rules:
+    - alert: ReservationAppHighErrorRate
+      expr: |
+        sum(rate(reservation_app_http_errors_total[5m]))
+        /
+        sum(rate(reservation_app_http_requests_total[5m]))
+        > 0.05
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "ReservationApp high error rate"
+        description: "More than 5% of HTTP requests are returning 5xx for 5 minutes."
+
+    - alert: ReservationAppHighLatencyP95
+      expr: |
+        histogram_quantile(
+          0.95,
+          sum by (le) (
+            rate(reservation_app_http_request_duration_seconds_bucket[5m])
+          )
+        ) > 1
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "ReservationApp high latency (P95 > 1s)"
+        description: "95th percentile latency is higher than 1 second for the last 10 minutes."

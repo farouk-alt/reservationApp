@@ -12,3 +12,5 @@ Full-stack application for managing room reservations.
 ```bash
 git clone https://github.com/farouk-alt/reservation-management-app.git
 docker compose up --build
+
+## DevOps

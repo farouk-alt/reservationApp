@@ -14,14 +14,14 @@ services:
       - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock   # For Docker builds
     environment:
       JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
     networks:
       - app_network
 
   # ===========================
-  # 2️⃣ SonarQube (Code Analysis)
+  # 2️⃣ SonarQube
   # ===========================
   sonarqube:
     image: sonarqube:community
@@ -42,9 +42,6 @@ services:
     networks:
       - app_network
 
-  # ===========================
-  # 2.1 SonarQube Database
-  # ===========================
   sonar_db:
     image: postgres:13
     container_name: sonar_db
@@ -83,16 +80,11 @@ services:
         echo '⏳ Waiting for MySQL...';
         until nc -z db 3306; do sleep 2; done;
         echo '✅ MySQL is ready!';
-        
+
         php artisan key:generate --force || true;
         php artisan migrate --force;
-        php artisan config:clear;
-        php artisan cache:clear;
-        php artisan route:clear;
-        php artisan view:clear;
         php artisan storage:link || true;
-        
-        echo '🚀 Starting PHP-FPM...';
+
         php-fpm
       "
     networks:
@@ -116,13 +108,11 @@ services:
       - WATCHPACK_POLLING=true
     stdin_open: true
     tty: true
-    depends_on:
-      - nginx
     networks:
       - app_network
 
   # ===========================
-  # 5️⃣ Nginx (Proxy)
+  # 5️⃣ Nginx
   # ===========================
   nginx:
     image: nginx:alpine
@@ -138,12 +128,11 @@ services:
       - app_network
 
   # ===========================
-  # 6️⃣ MySQL Database
+  # 6️⃣ MySQL
   # ===========================
   db:
     image: mysql:8.0
     container_name: mysql_db
-    restart: always
     environment:
       MYSQL_DATABASE: reservation_db
       MYSQL_ROOT_PASSWORD: farouk1122
@@ -151,12 +140,12 @@ services:
       - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pfarouk1122"]
       interval: 5s
       timeout: 3s
       retries: 10
-    command: --default-authentication-plugin=mysql_native_password
     networks:
       - app_network
 
@@ -172,7 +161,7 @@ volumes:
   db_data:
 
 # ===========================
-# NETWORK (Single network for all services)
+# NETWORK
 # ===========================
 networks:
   app_network:

@@ -2,64 +2,66 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Models\Employe;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class EmployeTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function it_can_list_employes()
+    public function test_it_can_list_employes()
     {
         Employe::factory()->count(3)->create();
 
         $response = $this->getJson('/api/employes');
 
         $response->assertStatus(200)
-                 ->assertJsonCount(3);
+            ->assertJsonCount(3);
     }
 
-    /** @test */
-    public function it_can_create_an_employe()
+    public function test_it_can_create_an_employe()
     {
-        $data = [
-            'nom' => 'Test',
-            'prenom' => 'User',
-            'departement' => 'IT',
-            'username' => 'tuser',
-            'password' => 'secret123',
-            'email' => 'tuser@example.com'
+        $payload = [
+            'nom'        => 'John',
+            'prenom'     => 'Doe',
+            'departement'=> 'IT',
+            'username'   => 'john123',
+            'password'   => 'secret123',
+            'email'      => 'john@example.com',
         ];
 
-        $response = $this->postJson('/api/employes', $data);
+        $response = $this->postJson('/api/employes', $payload);
 
         $response->assertStatus(201)
-                 ->assertJsonFragment(['nom' => 'Test']);
+            ->assertJsonFragment(['nom' => 'John']);
+
+        $this->assertDatabaseCount('employes', 1);
     }
 
-    /** @test */
-    public function it_can_update_an_employe()
+    public function test_it_can_update_an_employe()
     {
-        $emp = Employe::factory()->create();
+        $employe = Employe::factory()->create();
 
-        $response = $this->putJson("/api/employes/{$emp->id}", [
-            'departement' => 'Finance'
+        $response = $this->putJson("/api/employes/$employe->id", [
+            'departement' => 'Finance',
         ]);
 
+        // Controller returns ONLY the updated object → adjust test
         $response->assertStatus(200)
-                 ->assertJsonFragment(['departement' => 'Finance']);
+            ->assertJsonFragment(['departement' => 'Finance']);
     }
 
-    /** @test */
-    public function it_can_delete_an_employe()
+    public function test_it_can_delete_an_employe()
     {
-        $emp = Employe::factory()->create();
+        $employe = Employe::factory()->create();
 
-        $response = $this->deleteJson("/api/employes/{$emp->id}");
+        $this->deleteJson("/api/employes/$employe->id")
+            ->assertStatus(200);
 
-        $response->assertStatus(200);
-        $this->assertDatabaseMissing('employes', ['id' => $emp->id]);
+        // SQLite resets autoincrement → use assertDatabaseMissing by id
+        $this->assertDatabaseMissing('employes', [
+            'id' => $employe->id
+        ]);
     }
 }

@@ -2,88 +2,77 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Models\Reservation;
-use App\Models\Salle;
 use App\Models\Employe;
+use App\Models\Salle;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class ReservationTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function it_can_list_reservations()
+    private function validPayload($overrides = [])
     {
-        $emp = Employe::factory()->create();
-        $salle = Salle::factory()->create();
+        $default = [
+            'num_salle'     => Salle::factory()->create()->id,
+            'date_res'      => now()->toDateString(),
+            'heure_res'     => now()->addHour()->format('H:i'),
+            'duree_minutes' => 60,
+        ];
 
-        Reservation::factory()->create([
-            'num_emp' => $emp->id,
-            'num_salle' => $salle->id,
-        ]);
+        return array_merge($default, $overrides);
+    }
+
+    public function test_it_can_list_reservations()
+    {
+        Reservation::factory()->count(3)->create();
 
         $response = $this->getJson('/api/reservations');
 
         $response->assertStatus(200)
-                 ->assertJsonCount(1);
+            ->assertJsonCount(3);
     }
 
-    /** @test */
-    public function it_can_create_a_reservation()
+    public function test_it_can_create_a_reservation()
     {
-        $emp = Employe::factory()->create();
-        $salle = Salle::factory()->create();
+        $user = Employe::factory()->create();
+        $this->actingAs($user);
 
-        $data = [
-            'num_emp' => $emp->id,
-            'num_salle' => $salle->id,
-            'date_res' => '2025-11-10',
-            'heure_res' => '09:00:00',
-            'duree' => 2,
-            'statut' => 'confirmée',
-        ];
-
-        $response = $this->postJson('/api/reservations', $data);
+        $response = $this->postJson('/api/reservations', $this->validPayload());
 
         $response->assertStatus(201)
-                ->assertJsonPath('reservation.statut', 'confirmée');
+            ->assertJsonFragment(['message' => '✅ Réservation créée avec succès !']);
 
+        $this->assertDatabaseCount('reservations', 1);
     }
 
-    /** @test */
-    public function it_can_update_a_reservation()
+    public function test_it_can_update_a_reservation()
     {
-        $emp = Employe::factory()->create();
-        $salle = Salle::factory()->create();
+        $user = Employe::factory()->create();
+        $this->actingAs($user);
 
-        $reservation = Reservation::factory()->create([
-            'num_emp' => $emp->id,
-            'num_salle' => $salle->id,
-        ]);
+        $reservation = Reservation::factory()->create(['num_emp' => $user->id]);
 
-        $response = $this->putJson("/api/reservations/{$reservation->id}", [
-            'statut' => 'modifiée'
+        $response = $this->putJson("/api/reservations/$reservation->id", [
+            'date_res'      => now()->toDateString(),
+            'heure_res'     => now()->addHours(2)->format('H:i'),
+            'duree_minutes' => 90,
         ]);
 
         $response->assertStatus(200)
-                 ->assertJsonFragment(['statut' => 'modifiée']);
+            ->assertJsonFragment(['message' => 'Mise à jour effectuée']);
     }
 
-    /** @test */
-    public function it_can_delete_a_reservation()
+    public function test_it_can_delete_a_reservation()
     {
-        $emp = Employe::factory()->create();
-        $salle = Salle::factory()->create();
+        $reservation = Reservation::factory()->create();
 
-        $reservation = Reservation::factory()->create([
-            'num_emp' => $emp->id,
-            'num_salle' => $salle->id,
+        $this->deleteJson("/api/reservations/$reservation->id")
+            ->assertStatus(200);
+
+        $this->assertDatabaseMissing('reservations', [
+            'id' => $reservation->id
         ]);
-
-        $response = $this->deleteJson("/api/reservations/{$reservation->id}");
-
-        $response->assertStatus(200);
-        $this->assertDatabaseMissing('reservations', ['id' => $reservation->id]);
     }
 }

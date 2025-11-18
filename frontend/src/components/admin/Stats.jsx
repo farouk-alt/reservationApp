@@ -61,7 +61,7 @@ export default function AdminStats() {
       {/* Row 2 */}
       <div className="row mb-5">
         <div className="col-md-4 mb-3"><KPI title="Salles actives" value={data.activeSalles} color="#4ADE80" /></div>
-        <div className="col-md-4 mb-3"><KPI title="Salles inactives" value={data.inactiveSalles} color="#F87171" /></div>
+        {/* <div className="col-md-4 mb-3"><KPI title="Salles inactives" value={data.inactiveSalles} color="#F87171" /></div> */}
         <div className="col-md-4 mb-3"><KPI title="Annulations" value={data.cancelled} color="#F87171" /></div>
       </div>
 
