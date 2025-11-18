@@ -89,8 +89,6 @@ pipeline {
             }
         }
 
-
-
         stage('OWASP Dependency Scan') {
             steps {
                 sh "dependency-check --scan backend --format HTML --out reports/dependency-check"
