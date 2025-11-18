@@ -10,6 +10,7 @@ pipeline {
         SONAR_PROJECT_KEY = "reservationApp-${BRANCH_CLEAN}"
         NVD_API_KEY = credentials('nvd-api-key')
     }
+
     stages {
 
         stage('Checkout') {
@@ -32,7 +33,6 @@ pipeline {
                 dir('backend') {
                     sh """
                         php artisan migrate --env=testing --force
-                        echo "Skipping seeding in testing environment"
                         echo "Running PHPUnit with coverage..."
                         vendor/bin/phpunit --coverage-clover coverage.xml || true
                         ls -l coverage.xml || true
@@ -41,8 +41,7 @@ pipeline {
             }
         }
 
-
-       stage('Frontend - Install + Coverage') {
+        stage('Frontend - Install + Coverage') {
             steps {
                 dir('frontend') {
                     sh """
@@ -53,8 +52,6 @@ pipeline {
                 }
             }
         }
-
-
 
         stage('SonarQube Analysis') {
             steps {
@@ -73,6 +70,16 @@ pipeline {
             }
         }
 
+        stage('Prepare Reports Folders') {
+            steps {
+                sh """
+                    mkdir -p reports/dependency-check
+                    mkdir -p reports/grype
+                    mkdir -p reports/semgrep
+                """
+            }
+        }
+
         stage('Quality Gate') {
             steps {
                 script {
@@ -88,18 +95,19 @@ pipeline {
                 }
             }
         }
-      stage('OWASP Dependency Scan') {
+
+        stage('OWASP Dependency Scan') {
             steps {
                 sh """
-                docker run --rm \
-                    -v "\$(pwd)/backend":/src \
-                    -v "\$(pwd)/reports":/reports \
-                    -e NVD_API_KEY=${NVD_API_KEY} \
-                    owasp/dependency-check:latest \
-                    --scan /src \
-                    --format HTML \
-                    --out /reports/dependency-check \
-                    --nvdApiKey ${NVD_API_KEY}
+                    docker run --rm \
+                        -v $(pwd)/backend:/src \
+                        -v $(pwd)/reports:/reports \
+                        -e NVD_API_KEY=${NVD_API_KEY} \
+                        owasp/dependency-check:latest \
+                        --scan /src \
+                        --format "HTML,XML" \
+                        --out /reports/dependency-check \
+                        --nvdApiKey ${NVD_API_KEY}
                 """
             }
         }
@@ -112,7 +120,6 @@ pipeline {
                 """
             }
         }
-
 
         stage('Gitleaks') {
             steps {
@@ -129,18 +136,18 @@ pipeline {
         stage('Report to JIRA') {
             steps {
                 sh """
-                curl -X POST \
-                    -H "Content-Type: application/json" \
-                    -u "farouk.karti@etud.iga.ac.ma:${JIRA_TOKEN}" \
-                    --data '{
-                        "fields": {
-                            "project": {"key": "DEV"},
-                            "summary": "DevSecOps Report - Build #${env.BUILD_NUMBER}",
-                            "description": "Quality Gate: ${QG_STATUS}",
-                            "issuetype": {"name": "Task"}
-                        }
-                    }' \
-                    https://faroukkarti.atlassian.net/rest/api/3/issue
+                    curl -X POST \
+                        -H "Content-Type: application/json" \
+                        -u "farouk.karti@etud.iga.ac.ma:${JIRA_TOKEN}" \
+                        --data '{
+                            "fields": {
+                                "project": {"key": "DEV"},
+                                "summary": "DevSecOps Report - Build #${env.BUILD_NUMBER}",
+                                "description": "Quality Gate: ${QG_STATUS}",
+                                "issuetype": {"name": "Task"}
+                            }
+                        }' \
+                        https://faroukkarti.atlassian.net/rest/api/3/issue
                 """
             }
         }
