@@ -27,7 +27,7 @@ spec:
             - name: DB_USERNAME
               value: root
             - name: DB_PASSWORD
-              value: farouk1122
+              value: 1010
 ---
 apiVersion: v1
 kind: Service
