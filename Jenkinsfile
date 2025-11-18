@@ -104,8 +104,6 @@ pipeline {
             }
         }
 
-
-
         stage('Vulnerability Scan (Grype)') {
             steps {
                 sh """
