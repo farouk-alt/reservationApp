@@ -100,8 +100,8 @@ pipeline {
             steps {
                 sh """
                     docker run --rm \
-                        -v $(pwd)/backend:/src \
-                        -v $(pwd)/reports:/reports \
+                        -v \$(pwd)/backend:/src \
+                        -v \$(pwd)/reports:/reports \
                         -e NVD_API_KEY=${NVD_API_KEY} \
                         owasp/dependency-check:latest \
                         --scan /src \
