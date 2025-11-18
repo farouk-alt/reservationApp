@@ -96,21 +96,26 @@ pipeline {
             }
         }
 
-        stage('OWASP Dependency Scan') {
+       stage('OWASP Dependency Scan') {
             steps {
-                sh """
-                    docker run --rm \
-                        -v \$(pwd)/backend:/src \
-                        -v \$(pwd)/reports:/reports \
-                        -e NVD_API_KEY=${NVD_API_KEY} \
-                        owasp/dependency-check:latest \
-                        --scan /src \
-                        --format "HTML,XML" \
-                        --out /reports/dependency-check \
-                        --nvdApiKey ${NVD_API_KEY}
-                """
+                withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD')]) {
+                    sh """
+                        mkdir -p reports/dependency-check
+
+                        docker run --rm \
+                            -v \$(pwd)/backend:/src \
+                            -v \$(pwd)/reports:/reports \
+                            -e NVD_API_KEY=$NVD \
+                            owasp/dependency-check:latest \
+                            --scan /src \
+                            --format ALL \
+                            --out /reports/dependency-check \
+                            --nvdApiKey $NVD
+                    """
+                }
             }
         }
+
 
         stage('Vulnerability Scan (Grype)') {
             steps {
