@@ -21,11 +21,22 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /
     > /etc/apt/sources.list.d/docker.list && \
     apt-get update && apt-get install -y docker-ce-cli
 
+    
+# ===== PHP 8.4 + SQLite + Xdebug (WORKING) =====
+# ===== PHP 8.4 + SQLite + Xdebug =====
+RUN apt-get update && apt-get install -y \
+    php8.4-cli php8.4-dev php8.4-sqlite3 php8.4-mbstring php8.4-xml php8.4-curl php8.4-zip \
+    autoconf gcc make pkg-config \
+    && pecl install xdebug \
+    && echo "zend_extension=$(php-config --extension-dir)/xdebug.so" > /etc/php/8.4/cli/conf.d/20-xdebug.ini \
+    && echo "xdebug.mode=coverage" >> /etc/php/8.4/cli/conf.d/20-xdebug.ini \
+    && echo "extension=pdo_sqlite" > /etc/php/8.4/cli/conf.d/10-sqlite.ini \
+    && echo "extension=sqlite3" >> /etc/php/8.4/cli/conf.d/10-sqlite.ini
 
-RUN apt-get install -y php-dev && \
-    pecl install xdebug && \
-    echo "zend_extension=$(php-config --extension-dir)/xdebug.so" > /etc/php/8.2/cli/conf.d/20-xdebug.ini && \
-    echo "xdebug.mode=coverage" >> /etc/php/8.2/cli/conf.d/20-xdebug.ini
+
+
+
+
 # ========================
 # Sonar Scanner
 # ========================
@@ -37,21 +48,33 @@ RUN wget -O /tmp/sonar.zip \
     rm /tmp/sonar.zip
 
 # ========================
-# Trivy
+# Trivy (Official APT Repository - Always Works)
 # ========================
-RUN wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.1_Linux-64bit.deb && \
-    dpkg -i trivy_0.50.1_Linux-64bit.deb && rm trivy_0.50.1_Linux-64bit.deb
+# === Vulnerability Scanner (GRYPE - stable) ===
+RUN curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | \
+    sh -s -- -b /usr/local/bin
+
+
+
 
 # ========================
 # Gitleaks
 # ========================
-RUN wget https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_8.18.4_linux_x64.tar.gz && \
-    tar -xvf gitleaks_8.18.4_linux_x64.tar.gz && mv gitleaks /usr/local/bin/ && rm gitleaks_8.18.4_linux_x64.tar.gz
+RUN wget -q https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz && \
+    tar -xzf gitleaks_8.21.2_linux_x64.tar.gz && \
+    mv gitleaks /usr/local/bin/ && \
+    chmod +x /usr/local/bin/gitleaks && \
+    rm gitleaks_8.21.2_linux_x64.tar.gz
 
 # ========================
-# Semgrep
+# Semgrep (Safe pipx install)
 # ========================
-RUN pip install semgrep
+RUN apt-get update && apt-get install -y pipx && \
+    pipx ensurepath && \
+    pipx install semgrep
+ENV PATH="$PATH:/root/.local/bin"
+
+
 
 # ========================
 # kubectl + Helm + Liquibase

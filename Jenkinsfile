@@ -1,6 +1,3 @@
-def QG_STATUS = ""
-def qg = ""
-
 pipeline {
 
     agent any
@@ -15,9 +12,9 @@ pipeline {
 
     stages {
 
-        stage('Checkout SCM') {
-            steps { 
-                checkout scm 
+        stage('Checkout') {
+            steps {
+                checkout scm
                 sh "mkdir -p reports"
             }
         }
@@ -30,30 +27,26 @@ pipeline {
             }
         }
 
-        stage('Frontend - Install Dependencies') {
-            steps {
-                dir('frontend') {
-                    sh "npm install || true"
-                }
-            }
-        }
-
-        stage('Backend - Run Tests + Coverage') {
+        stage('Backend - Tests + Coverage') {
             steps {
                 dir('backend') {
-                    sh """
-                        vendor/bin/phpunit --coverage-clover coverage.xml --testdox || true
-                    """
+                    sh '''
+                        echo "Running PHPUnit with coverage..."
+                        vendor/bin/phpunit --coverage-clover coverage.xml || true
+                        ls -l coverage.xml || true
+                    '''
                 }
             }
         }
 
-        stage('Frontend - Run Tests + Coverage') {
+        stage('Frontend - Install + Coverage') {
             steps {
                 dir('frontend') {
-                    sh """
+                    sh '''
+                        npm install || true
                         npm test -- --coverage || true
-                    """
+                        ls -l coverage/lcov.info || true
+                    '''
                 }
             }
         }
@@ -62,14 +55,14 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQube') {
                     sh """
-                        sonar-scanner \
-                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                            -Dsonar.sources=backend/app,frontend/src \
-                            -Dsonar.php.coverage.reportPaths=backend/coverage.xml \
-                            -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info \
-                            -Dsonar.exclusions=**/vendor/**,**/node_modules/** \
-                            -Dsonar.host.url=${SONAR_HOST_URL} \
-                            -Dsonar.token=${SONAR_LOGIN}
+                    sonar-scanner \
+                        -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                        -Dsonar.sources=backend/app,frontend/src \
+                        -Dsonar.php.coverage.reportPaths=backend/coverage.xml \
+                        -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info \
+                        -Dsonar.exclusions=**/vendor/**,**/node_modules/** \
+                        -Dsonar.host.url=${SONAR_HOST_URL} \
+                        -Dsonar.token=${SONAR_LOGIN}
                     """
                 }
             }
@@ -78,8 +71,8 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 script {
-                    timeout(time: 2, unit: 'MINUTES') {
-                        qg = waitForQualityGate()
+                    timeout(time: 3, unit: 'MINUTES') {
+                        def qg = waitForQualityGate()
                         QG_STATUS = qg.status
                         echo "Quality Gate: ${QG_STATUS}"
                     }
@@ -87,87 +80,57 @@ pipeline {
             }
         }
 
-        stage('Dependency Scan (OWASP)') {
+        stage('OWASP Dependency Scan') {
+            steps {
+                sh "dependency-check --scan backend --format HTML --out reports/dependency-check"
+            }
+        }
+
+        stage('Vulnerability Scan (Grype)') {
             steps {
                 sh """
-                    dependency-check \
-                        --scan backend \
-                        --format HTML \
-                        --out reports/dependency-check
+                    grype dir:backend -o json > reports/grype-backend.json
+                    grype dir:frontend -o json > reports/grype-frontend.json
                 """
             }
         }
 
-        stage('Container Scan (Trivy)') {
+
+        stage('Gitleaks') {
             steps {
-                sh """
-                    trivy fs backend  --format json --output reports/trivy-backend.json
-                    trivy fs frontend --format json --output reports/trivy-frontend.json
-                """
+                sh "gitleaks detect --source . --report-path reports/gitleaks.json --no-git"
             }
         }
 
-        stage('Secrets Scan (Gitleaks)') {
+        stage('Semgrep (OWASP Top10)') {
             steps {
-                sh """
-                    gitleaks detect \
-                        --source . \
-                        --report-path reports/gitleaks.json \
-                        --no-git
-                """
+                sh "semgrep --config owasp-top-ten --json --output reports/semgrep.json ."
             }
         }
 
-        stage('SAST (Semgrep OWASP Top 10)') {
+        stage('Report to JIRA') {
             steps {
                 sh """
-                    semgrep --config owasp-top-ten \
-                    --json --output reports/semgrep.json .
-                """
-            }
-        }
-
-        stage('Send Report to Jira') {
-            steps {
-                script {
-                    def jiraPayload = """
-                    {
+                curl -X POST \
+                    -H "Content-Type: application/json" \
+                    -u "farouk.karti@etud.iga.ac.ma:${JIRA_TOKEN}" \
+                    --data '{
                         "fields": {
                             "project": {"key": "DEV"},
                             "summary": "DevSecOps Report - Build #${env.BUILD_NUMBER}",
-                            "description": "Quality Gate: ${QG_STATUS}\\nReports available in Jenkins.",
+                            "description": "Quality Gate: ${QG_STATUS}",
                             "issuetype": {"name": "Task"}
                         }
-                    }
-                    """
-
-                    sh """
-                    curl -X POST \
-                        -H "Content-Type: application/json" \
-                        -u "farouk.karti@etud.iga.ac.ma:${JIRA_TOKEN}" \
-                        --data '${jiraPayload}' \
-                        https://faroukkarti.atlassian.net/rest/api/3/issue
-                    """
-                }
-            }
-        }
-
-        stage('Frontend - Build') {
-            steps {
-                dir('frontend') {
-                    sh "npm run build || true"
-                }
+                    }' \
+                    https://faroukkarti.atlassian.net/rest/api/3/issue
+                """
             }
         }
 
     }
 
     post {
-        success {
-            echo "Build completed successfully!"
-        }
-        failure {
-            echo "Build failed!"
-        }
+        success { echo "✅ Build OK" }
+        failure { echo "❌ Build Failed" }
     }
 }
