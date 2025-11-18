@@ -42,8 +42,7 @@ pipeline {
             steps {
                 dir('backend') {
                     sh """
-                        vendor/bin/phpunit \
-                        --coverage-clover coverage.xml || true
+                        vendor/bin/phpunit --coverage-clover coverage.xml --testdox || true
                     """
                 }
             }
@@ -53,7 +52,7 @@ pipeline {
             steps {
                 dir('frontend') {
                     sh """
-                        npm run test:coverage || true
+                        npm test -- --coverage || true
                     """
                 }
             }

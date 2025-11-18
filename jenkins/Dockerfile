@@ -21,6 +21,11 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /
     > /etc/apt/sources.list.d/docker.list && \
     apt-get update && apt-get install -y docker-ce-cli
 
+
+RUN apt-get install -y php-dev && \
+    pecl install xdebug && \
+    echo "zend_extension=$(php-config --extension-dir)/xdebug.so" > /etc/php/8.2/cli/conf.d/20-xdebug.ini && \
+    echo "xdebug.mode=coverage" >> /etc/php/8.2/cli/conf.d/20-xdebug.ini
 # ========================
 # Sonar Scanner
 # ========================
