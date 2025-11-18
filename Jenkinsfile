@@ -8,7 +8,6 @@ pipeline {
         JIRA_TOKEN = credentials('jira-token')
         BRANCH_CLEAN = "${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-') ?: 'main'}"
         SONAR_PROJECT_KEY = "reservationApp-${BRANCH_CLEAN}"
-        NVD_API_KEY = credentials('nvd-api-key')
     }
 
     stages {
@@ -98,23 +97,24 @@ pipeline {
 
        stage('OWASP Dependency Scan') {
             steps {
-                withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD')]) {
-                    sh """
-                        mkdir -p reports/dependency-check
+                sh "mkdir -p reports/dependency-check"
 
+                withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD')]) {
+                    sh '''
                         docker run --rm \
-                            -v \$(pwd)/backend:/src \
-                            -v \$(pwd)/reports:/reports \
+                            -v "$(pwd)/backend:/src" \
+                            -v "$(pwd)/reports:/report" \
                             -e NVD_API_KEY=$NVD \
                             owasp/dependency-check:latest \
                             --scan /src \
                             --format ALL \
-                            --out /reports/dependency-check \
+                            --out /report/dependency-check \
                             --nvdApiKey $NVD
-                    """
+                    '''
                 }
             }
         }
+
 
 
         stage('Vulnerability Scan (Grype)') {
