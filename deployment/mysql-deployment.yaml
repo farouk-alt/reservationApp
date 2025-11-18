@@ -17,7 +17,7 @@ spec:
           image: mysql:8
           env:
             - name: MYSQL_ROOT_PASSWORD
-              value: farouk1122
+              value: 1010
             - name: MYSQL_DATABASE
               value: reservation_db
           ports:
