@@ -32,7 +32,7 @@ pipeline {
                 dir('backend') {
                     sh """
                         php artisan migrate --env=testing --force
-                        php artisan db:seed --env=testing --force || true
+                        echo "Skipping seeding in testing environment"
                         echo "Running PHPUnit with coverage..."
                         vendor/bin/phpunit --coverage-clover coverage.xml || true
                         ls -l coverage.xml || true

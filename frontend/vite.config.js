@@ -10,7 +10,7 @@ export default defineConfig({
     setupFiles: "./src/setupTests.js", // ✅ must match the actual file name and path
     css: false,
     coverage: {
-      provider: "istanbul",
+      provider: "v8",
       reporter: ["text", "lcov"],
       reportsDirectory: "coverage",
     },

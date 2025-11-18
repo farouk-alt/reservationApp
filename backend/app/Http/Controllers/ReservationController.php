@@ -278,13 +278,11 @@ public function updateReservation(Request $request, Reservation $reservation)
 
     // ✅ Update
     $reservation->update($validated);
-$reservation->refresh();
 
     return response()->json([
         'message' => 'Mise à jour effectuée',
         'reservation' => $reservation
     ]);
-    
 }
 
 
