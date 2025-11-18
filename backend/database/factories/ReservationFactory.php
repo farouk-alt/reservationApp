@@ -13,9 +13,9 @@ class ReservationFactory extends Factory
         return [
             'num_emp' => Employe::factory(),
             'num_salle' => Salle::factory(),
-            'date_res' => $this->faker->date(),
+            'date_res' => now()->addDays(rand(1, 7))->toDateString(),
             'heure_res' => $this->faker->time(),
-            'duree' => $this->faker->numberBetween(1, 4),
+            'duree_minutes' => $this->faker->numberBetween(60, 360),
             'statut' => $this->faker->randomElement(['en_attente', 'confirmée', 'modifiée']),
         ];
     }

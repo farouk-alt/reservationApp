@@ -8,3 +8,4 @@ Route::get('/metrics', function () {
     return response($service->renderMetrics(), 200)
         ->header('Content-Type', 'text/plain; version=0.0.4');
 });
+Route::get('/', fn() => response()->json(['message' => 'OK'], 200));

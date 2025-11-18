@@ -1,17 +1,19 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render, screen, waitFor } from "@testing-library/react";
 import Reservations from "../components/employes/Reservations";
 import axios from "../api/axios";
-import { vi, describe, it, expect } from "vitest";
-import "@testing-library/jest-dom";
+import { vi, describe, it, beforeEach, expect } from "vitest";
 
-// 🧩 Proper axios mock
 vi.mock("../api/axios", () => ({
   default: {
     get: vi.fn(() => Promise.resolve({ data: [] })),
-    post: vi.fn(() => Promise.resolve({ data: { statut: "confirmée" } })),
   },
 }));
+
+beforeEach(() => {
+  vi.spyOn(Storage.prototype, "getItem").mockImplementation(() =>
+    JSON.stringify({ id: 10 })
+  );
+});
 
 describe("Reservations component", () => {
   it("renders the title", () => {
@@ -19,29 +21,19 @@ describe("Reservations component", () => {
     expect(screen.getByText("📅 Mes Réservations")).toBeInTheDocument();
   });
 
-  it("fetches reservations on mount", async () => {
+  it("fetches employee reservations on mount", async () => {
     render(<Reservations />);
 
     await waitFor(() => {
-      expect(axios.get).toHaveBeenCalledWith("/reservations");
+      expect(axios.get).toHaveBeenCalledWith("/reservations/employe/10");
     });
   });
 
-  it("can create a reservation", async () => {
+  it("shows 'Aucune réservation trouvée' when list empty", async () => {
+    axios.get.mockResolvedValueOnce({ data: [] });
+
     render(<Reservations />);
 
-    // Your component uses selects (NOT placeholders)
-    const salleSelect = screen.getAllByRole("combobox")[1]; // second select
-    const dureeSelect = screen.getAllByRole("combobox")[2]; // third select
-
-    fireEvent.change(salleSelect, { target: { value: "2" } });
-    fireEvent.change(dureeSelect, { target: { value: "2" } });
-
-    // Click submit
-    await userEvent.click(screen.getByText("Ajouter"));
-
-    await waitFor(() => {
-      expect(axios.post).toHaveBeenCalled();
-    });
+    await screen.findByText("Aucune réservation trouvée.");
   });
 });

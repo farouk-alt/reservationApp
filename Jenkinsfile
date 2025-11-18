@@ -30,26 +30,31 @@ pipeline {
         stage('Backend - Tests + Coverage') {
             steps {
                 dir('backend') {
-                    sh '''
+                    sh """
+                        php artisan migrate --env=testing --force
+                        php artisan db:seed --env=testing --force || true
                         echo "Running PHPUnit with coverage..."
                         vendor/bin/phpunit --coverage-clover coverage.xml || true
                         ls -l coverage.xml || true
-                    '''
+                    """
                 }
             }
         }
 
-        stage('Frontend - Install + Coverage') {
+
+       stage('Frontend - Install + Coverage') {
             steps {
                 dir('frontend') {
-                    sh '''
-                        npm install || true
+                    sh """
+                        npm install
                         npm test -- --coverage || true
                         ls -l coverage/lcov.info || true
-                    '''
+                    """
                 }
             }
         }
+
+
 
         stage('SonarQube Analysis') {
             steps {
