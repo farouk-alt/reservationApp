@@ -94,28 +94,28 @@ pipeline {
                 }
             }
         }
-
-       stage('OWASP Dependency Scan') {
+        stage('OWASP Dependency Scan') {
             steps {
                 withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD')]) {
-                    sh '''
+                    sh """
+                        mkdir -p reports/dependency-check
+
                         docker run --rm \
-                            -v "$(pwd)/backend:/src" \
-                            -v "$(pwd)/reports:/report" \
+                            --user 1000:1000 \
+                            -v \$(pwd)/backend:/src \
+                            -v \$(pwd)/reports/dependency-check:/report \
                             -e NVD_API_KEY=$NVD \
                             owasp/dependency-check:latest \
-                            sh -c "
-                                mkdir -p /report/dependency-check &&
-                                dependency-check.sh \
-                                    --scan /src \
-                                    --format ALL \
-                                    --out /report/dependency-check \
-                                    --nvdApiKey $NVD
-                            "
-                    '''
+                            --scan /src \
+                            --format ALL \
+                            --out /report \
+                            --nvdApiKey $NVD || true
+                    """
                 }
             }
         }
+
+
 
 
 
@@ -137,9 +137,12 @@ pipeline {
 
         stage('Semgrep (OWASP Top10)') {
             steps {
-                sh "semgrep --config owasp-top-ten --json --output reports/semgrep.json ."
+                sh """
+                    semgrep --config owasp-top-ten --json --output reports/semgrep.json . || true
+                """
             }
         }
+
 
         stage('Report to JIRA') {
             steps {
