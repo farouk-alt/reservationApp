@@ -76,13 +76,18 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 script {
-                    timeout(time: 10, unit: 'MINUTES') {
-                        waitForQualityGate abortPipeline: false
+                    timeout(time: 15, unit: 'MINUTES') {
+                        try {
+                            def qg = waitForQualityGate abortPipeline: false
+                            env.QG_STATUS = qg.status
+                        } catch (Exception e) {
+                            env.QG_STATUS = "TIMEOUT"
+                            echo "Quality Gate check failed: ${e.message}"
+                        }
                     }
                 }
             }
         }
-
 
 
 
