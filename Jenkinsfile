@@ -88,11 +88,20 @@ pipeline {
                 }
             }
         }
-        stage('OWASP Dependency Scan') {
+      stage('OWASP Dependency Scan') {
             steps {
-                sh "dependency-check --scan backend --format HTML --out reports/dependency-check"
+                sh """
+                docker run --rm \
+                    -v \$(pwd)/backend:/src \
+                    -v \$(pwd)/reports:/reports \
+                    owasp/dependency-check:latest \
+                    --scan /src \
+                    --format HTML \
+                    --out /reports/dependency-check
+                """
             }
         }
+
 
         stage('Vulnerability Scan (Grype)') {
             steps {
