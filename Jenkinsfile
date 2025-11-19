@@ -162,7 +162,7 @@ pipeline {
                                         "issuetype": {"name": "Task"}
                                     }
                                 }' \
-                                https://faroukkarti.atlassian.net/rest/api/3/issue
+                                https://etud-team-devops.atlassian.net/rest/api/3/issue
                         """
                     }
                 }
