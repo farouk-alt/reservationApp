@@ -141,7 +141,7 @@ pipeline {
             steps {
                 withCredentials([
                     string(credentialsId: 'jira-token', variable: 'JTOKEN'),
-                    string(credentialsId: 'jira-email', variable: 'JIRA_EMAIL')  // ✔ load email from Jenkins credentials
+                    string(credentialsId: 'jira-email', variable: 'JIRA_EMAIL')
                 ]) {
                     script {
                         def auth = sh(
@@ -171,6 +171,7 @@ pipeline {
                 }
             }
         }
+
 
     }
 
