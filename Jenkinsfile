@@ -156,10 +156,10 @@ pipeline {
                                 -H "Content-Type: application/json" \
                                 --data '{
                                     "fields": {
-                                        "project": {"key": "DEV"},
-                                        "summary": "DevSecOps Report - Build #${env.BUILD_NUMBER}",
-                                        "description": "Quality Gate: ${env.QG_STATUS ?: 'UNKNOWN'}",
-                                        "issuetype": {"name": "Task"}
+                                    "project": {"key": "SCRUM"},
+                                    "summary": "DevSecOps Report - Build #'"${env.BUILD_NUMBER}"'",
+                                    "description": "Quality Gate: '"${env.QG_STATUS}"'",
+                                    "issuetype": {"name": "Task"}
                                     }
                                 }' \
                                 https://etud-team-devops.atlassian.net/rest/api/3/issue
