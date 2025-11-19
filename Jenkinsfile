@@ -144,27 +144,24 @@ pipeline {
                     string(credentialsId: 'jira-email', variable: 'JIRA_EMAIL')
                 ]) {
                     script {
+                        // Remove newlines from base64 output
                         def auth = sh(
-                            script: "echo -n '${JIRA_EMAIL}:${JTOKEN}' | base64",
+                            script: "echo -n '\${JIRA_EMAIL}:\${JTOKEN}' | base64 -w 0",
                             returnStdout: true
                         ).trim()
-
-                        def json = """
-                        {
-                            "fields": {
-                                "project": {"key": "DEV"},
-                                "summary": "DevSecOps Report - Build #${env.BUILD_NUMBER}",
-                                "description": "Quality Gate: ${QG_STATUS}",
-                                "issuetype": {"name": "Task"}
-                            }
-                        }
-                        """
 
                         sh """
                             curl -X POST \
                                 -H "Authorization: Basic ${auth}" \
                                 -H "Content-Type: application/json" \
-                                --data '${json}' \
+                                --data '{
+                                    "fields": {
+                                        "project": {"key": "DEV"},
+                                        "summary": "DevSecOps Report - Build #${env.BUILD_NUMBER}",
+                                        "description": "Quality Gate: ${env.QG_STATUS ?: 'UNKNOWN'}",
+                                        "issuetype": {"name": "Task"}
+                                    }
+                                }' \
                                 https://faroukkarti.atlassian.net/rest/api/3/issue
                         """
                     }
