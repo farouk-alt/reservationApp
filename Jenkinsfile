@@ -140,15 +140,11 @@ pipeline {
         stage('Report to JIRA') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'jira-token', variable: 'JTOKEN'),
-                    string(credentialsId: 'jira-email', variable: 'JIRA_EMAIL')
+                    string(credentialsId: 'jira-email', variable: 'J_EMAIL'),
+                    string(credentialsId: 'jira-token', variable: 'J_TOKEN')
                 ]) {
                     script {
-                        // Remove newlines from base64 output
-                        def auth = sh(
-                            script: "echo -n '\${JIRA_EMAIL}:\${JTOKEN}' | base64 -w 0",
-                            returnStdout: true
-                        ).trim()
+                        def auth = "${J_EMAIL}:${J_TOKEN}".bytes.encodeBase64().toString()
 
                         sh """
                             curl -X POST \
@@ -156,10 +152,10 @@ pipeline {
                                 -H "Content-Type: application/json" \
                                 --data '{
                                     "fields": {
-                                    "project": {"key": "DA"},
-                                    "summary": "DevSecOps Report - Build #'"${env.BUILD_NUMBER}"'",
-                                    "description": "Quality Gate: '"${env.QG_STATUS}"'",
-                                    "issuetype": {"name": "Task"}
+                                        "project": {"key": "DA"},
+                                        "summary": "DevSecOps Report - Build #${env.BUILD_NUMBER}",
+                                        "description": "Quality Gate: ${env.QG_STATUS}",
+                                        "issuetype": {"name": "Task"}
                                     }
                                 }' \
                                 https://etud-team-devops.atlassian.net/rest/api/3/issue
@@ -168,6 +164,7 @@ pipeline {
                 }
             }
         }
+
 
 
     }
