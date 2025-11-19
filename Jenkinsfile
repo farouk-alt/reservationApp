@@ -156,7 +156,7 @@ pipeline {
                                 -H "Content-Type: application/json" \
                                 --data '{
                                     "fields": {
-                                    "project": {"key": "SCRUM"},
+                                    "project": {"key": "DA"},
                                     "summary": "DevSecOps Report - Build #'"${env.BUILD_NUMBER}"'",
                                     "description": "Quality Gate: '"${env.QG_STATUS}"'",
                                     "issuetype": {"name": "Task"}
