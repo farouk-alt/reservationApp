@@ -5,7 +5,11 @@ pipeline {
     environment {
         SONAR_HOST_URL = 'http://sonarqube:9000'
         SONAR_LOGIN = credentials('sonarqube-token')
+
         JIRA_TOKEN = credentials('jira-token')
+        // ❌ REMOVE THIS, IT BREAKS THE PIPELINE
+        // JIRA_EMAIL = "farouk.karti@etud.iga.ac.ma"
+
         BRANCH_CLEAN = "${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-') ?: 'main'}"
         SONAR_PROJECT_KEY = "reservationApp-${BRANCH_CLEAN}"
     }
@@ -32,7 +36,6 @@ pipeline {
                 dir('backend') {
                     sh """
                         php artisan migrate --env=testing --force
-                        echo "Running PHPUnit with coverage..."
                         vendor/bin/phpunit --coverage-clover coverage.xml || true
                         ls -l coverage.xml || true
                     """
@@ -56,14 +59,14 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQube') {
                     sh """
-                    sonar-scanner \
-                        -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                        -Dsonar.sources=backend/app,frontend/src \
-                        -Dsonar.php.coverage.reportPaths=backend/coverage.xml \
-                        -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info \
-                        -Dsonar.exclusions=**/vendor/**,**/node_modules/** \
-                        -Dsonar.host.url=${SONAR_HOST_URL} \
-                        -Dsonar.token=${SONAR_LOGIN}
+                        sonar-scanner \
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                            -Dsonar.sources=backend/app,frontend/src \
+                            -Dsonar.php.coverage.reportPaths=backend/coverage.xml \
+                            -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info \
+                            -Dsonar.exclusions=**/vendor/**,**/node_modules/** \
+                            -Dsonar.host.url=${SONAR_HOST_URL} \
+                            -Dsonar.token=${SONAR_LOGIN}
                     """
                 }
             }
@@ -86,20 +89,18 @@ pipeline {
                         try {
                             def qg = waitForQualityGate abortPipeline: false
                             env.QG_STATUS = qg.status
-                        } catch (Exception e) {
+                        } catch (e) {
                             env.QG_STATUS = "TIMEOUT"
-                            echo "Quality Gate check failed: ${e.message}"
                         }
                     }
                 }
             }
         }
+
         stage('OWASP Dependency Scan') {
             steps {
                 withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD')]) {
                     sh """
-                        mkdir -p reports/dependency-check
-
                         docker run --rm \
                             --user 0 \
                             -v \$(pwd)/backend:/src \
@@ -114,12 +115,6 @@ pipeline {
                 }
             }
         }
-
-
-
-
-
-
 
         stage('Vulnerability Scan (Grype)') {
             steps {
@@ -138,42 +133,44 @@ pipeline {
 
         stage('Semgrep (OWASP Top10)') {
             steps {
-                sh """
-                    semgrep --config owasp-top-ten --json --output reports/semgrep.json . || true
-                """
+                sh "semgrep --config owasp-top-ten --json --output reports/semgrep.json . || true"
             }
         }
 
-
         stage('Report to JIRA') {
             steps {
-                withCredentials([string(credentialsId: 'jira-token', variable: 'JTOKEN')]) {
+                withCredentials([
+                    string(credentialsId: 'jira-token', variable: 'JTOKEN'),
+                    string(credentialsId: 'jira-email', variable: 'JIRA_EMAIL')  // ✔ load email from Jenkins credentials
+                ]) {
                     script {
                         def auth = sh(
-                            script: "echo -n '${env.JIRA_EMAIL}:${JTOKEN}' | base64",
+                            script: "echo -n '${JIRA_EMAIL}:${JTOKEN}' | base64",
                             returnStdout: true
                         ).trim()
+
+                        def json = """
+                        {
+                            "fields": {
+                                "project": {"key": "DEV"},
+                                "summary": "DevSecOps Report - Build #${env.BUILD_NUMBER}",
+                                "description": "Quality Gate: ${QG_STATUS}",
+                                "issuetype": {"name": "Task"}
+                            }
+                        }
+                        """
 
                         sh """
                             curl -X POST \
                                 -H "Authorization: Basic ${auth}" \
                                 -H "Content-Type: application/json" \
-                                --data '{
-                                    "fields": {
-                                        "project": {"key": "DEV"},
-                                        "summary": "DevSecOps Report - Build #${env.BUILD_NUMBER}",
-                                        "description": "Quality Gate: ${QG_STATUS}",
-                                        "issuetype": {"name": "Task"}
-                                    }
-                                }' \
+                                --data '${json}' \
                                 https://faroukkarti.atlassian.net/rest/api/3/issue
                         """
                     }
                 }
             }
         }
-
-
 
     }
 
