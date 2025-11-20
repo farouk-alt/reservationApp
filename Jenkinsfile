@@ -143,27 +143,26 @@ pipeline {
                     string(credentialsId: 'jira-email', variable: 'J_EMAIL'),
                     string(credentialsId: 'jira-token', variable: 'J_TOKEN')
                 ]) {
-                    script {
-                        def auth = "${J_EMAIL}:${J_TOKEN}".bytes.encodeBase64().toString()
+                    sh '''
+                        AUTH=$(printf "%s:%s" "$J_EMAIL" "$J_TOKEN" | base64)
 
-                        sh """
-                            curl -X POST \
-                                -H "Authorization: Basic ${auth}" \
-                                -H "Content-Type: application/json" \
-                                --data '{
-                                    "fields": {
-                                        "project": {"key": "DA"},
-                                        "summary": "DevSecOps Report - Build #${env.BUILD_NUMBER}",
-                                        "description": "Quality Gate: ${env.QG_STATUS}",
-                                        "issuetype": {"name": "Task"}
-                                    }
-                                }' \
-                                https://etud-team-devops.atlassian.net/rest/api/3/issue
-                        """
-                    }
+                        curl -X POST \
+                            -H "Authorization: Basic $AUTH" \
+                            -H "Content-Type: application/json" \
+                            --data "{
+                            \\"fields\\": {
+                                \\"project\\": {\\"key\\": \\"DA\\"},
+                                \\"summary\\": \\"DevSecOps Report - Build #${BUILD_NUMBER}\\",
+                                \\"description\\": \\"Quality Gate: ${QG_STATUS}\\",
+                                \\"issuetype\\": {\\"name\\": \\"Task\\"}
+                            }
+                            }" \
+                            https://etud-team-devops.atlassian.net/rest/api/3/issue
+                    '''
                 }
             }
         }
+
 
 
 
