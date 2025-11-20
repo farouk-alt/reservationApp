@@ -1,0 +1,15 @@
+---
+- name: Deploy Reservation Management App
+  hosts: local
+  connection: local
+
+  tasks:
+    - name: Stop old containers
+      shell: docker compose down
+
+    - name: Build new containers
+      shell: docker compose build
+
+    - name: Start services
+      shell: docker compose up -d
+
