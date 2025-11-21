@@ -244,7 +244,7 @@ pipeline {
             }
 
             steps {
-                withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+                withCredentials([string(credentialsId: 'jenkins-token', variable: 'GITHUB_TOKEN')]) {
                     sh """
                         # Update backend deployment image
                         sed -i 's|image: .*/backend:.*|image: ${DOCKER_BACKEND_IMAGE}:${IMAGE_TAG}|' k8s/backend/deployment.yaml
