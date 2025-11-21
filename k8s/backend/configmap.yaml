@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+  namespace: reservation-app
+data:
+  DB_HOST: "mysql"
+  DB_PORT: "3306"
+  DB_DATABASE: "reservation_db"
+  DB_USERNAME: "root"

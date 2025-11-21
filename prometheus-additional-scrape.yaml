@@ -1,6 +1,0 @@
-- job_name: 'laravel'
-  metrics_path: /metrics
-  scheme: http
-  static_configs:
-    - targets:
-        - 'host.docker.internal:8000'

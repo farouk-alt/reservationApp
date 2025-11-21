@@ -1,8 +1,0 @@
-{
-  "spec": {
-    "additionalScrapeConfigs": {
-      "name": "prometheus-additional-scrape-configs",
-      "key": "additional.yaml"
-    }
-  }
-}
