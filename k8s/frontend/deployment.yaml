@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: faroukelrey19008/frontend:latest   # 🔹 Jenkins will overwrite this tag
+          image: faroukelrey19008/frontend:latest  
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
