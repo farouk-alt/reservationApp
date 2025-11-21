@@ -199,7 +199,10 @@ pipeline {
             }
         }
         stage('Build Docker Images') {
-            when { branch 'main' }
+            when {
+                expression { env.BRANCH_CLEAN == 'main' }
+            }
+
             steps {
                 sh """
                     docker build -t ${DOCKER_BACKEND_IMAGE}:${IMAGE_TAG} ./backend
@@ -209,7 +212,10 @@ pipeline {
         }
 
         stage('Push Docker Images') {
-            when { branch 'main' }
+            when {
+                expression { env.BRANCH_CLEAN == 'main' }
+            }
+
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'docker-hub-creds',
@@ -227,7 +233,10 @@ pipeline {
         }
 
         stage('Update Manifests & Push to GitHub') {
-            when { branch 'main' }
+            when {
+                expression { env.BRANCH_CLEAN == 'main' }
+            }
+
             steps {
                 withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
                     sh """
