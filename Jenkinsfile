@@ -3,20 +3,12 @@ pipeline {
     agent any
 
     environment {
-        SONAR_HOST_URL   = 'http://sonarqube:9000'
-        SONAR_LOGIN      = credentials('sonarqube-token')
-        JIRA_TOKEN       = credentials('jira-token')
+        SONAR_HOST_URL = 'http://sonarqube:9000'
+        SONAR_LOGIN = credentials('sonarqube-token')
+        JIRA_TOKEN = credentials('jira-token')
 
-        BRANCH_CLEAN     = "${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-') ?: 'main'}"
+        BRANCH_CLEAN = "${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-') ?: 'main'}"
         SONAR_PROJECT_KEY = "reservationApp-${BRANCH_CLEAN}"
-
-        // 🔹 Docker Hub + images
-        DOCKER_REGISTRY       = 'docker.io'
-        DOCKER_BACKEND_IMAGE  = 'faroukelrey19008/backend'
-        DOCKER_FRONTEND_IMAGE = 'faroukelrey19008/frontend'
-
-        // Tag = Jenkins build number
-        IMAGE_TAG = "${env.BUILD_NUMBER}"
     }
 
     stages {
@@ -146,45 +138,66 @@ pipeline {
         stage('Report to JIRA') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'jira-email',  variable: 'J_EMAIL'),
-                    string(credentialsId: 'jira-token',  variable: 'J_TOKEN')
+                    string(credentialsId: 'jira-email', variable: 'J_EMAIL'),
+                    string(credentialsId: 'jira-token', variable: 'J_TOKEN')
                 ]) {
                     script {
                         def status = env.QG_STATUS ?: 'UNKNOWN'
+                        
                         sh """
+                            # Create base64 auth WITHOUT line breaks (-w 0 is crucial)
                             AUTH=\$(printf "%s:%s" "\$J_EMAIL" "\$J_TOKEN" | base64 -w 0)
-
+                            
+                            # Make the API call with Atlassian Document Format
                             curl -X POST \
-                              -H "Authorization: Basic \$AUTH" \
-                              -H "Content-Type: application/json" \
-                              --data '{
-                                  "fields": {
-                                      "project": {"key": "DA"},
-                                      "summary": "DevSecOps Report - Build #${BUILD_NUMBER}",
-                                      "description": {
-                                          "type": "doc",
-                                          "version": 1,
-                                          "content": [
-                                              {"type": "paragraph","content":[{"type":"text","text":"Quality Gate Status: ${status}"}]},
-                                              {"type": "paragraph","content":[{"type":"text","text":"Build URL: ${BUILD_URL}"}]},
-                                              {"type": "paragraph","content":[{"type":"text","text":"Branch: ${BRANCH_CLEAN}"}]}
-                                          ]
-                                      },
-                                      "issuetype": {"name": "Task"}
-                                  }
-                              }' \
-                              https://etud-team-devops.atlassian.net/rest/api/3/issue \
-                              || echo "JIRA API call failed but continuing..."
+                                -H "Authorization: Basic \$AUTH" \
+                                -H "Content-Type: application/json" \
+                                --data '{
+                                    "fields": {
+                                        "project": {"key": "DA"},
+                                        "summary": "DevSecOps Report - Build #${BUILD_NUMBER}",
+                                        "description": {
+                                            "type": "doc",
+                                            "version": 1,
+                                            "content": [
+                                                {
+                                                    "type": "paragraph",
+                                                    "content": [
+                                                        {
+                                                            "type": "text",
+                                                            "text": "Quality Gate Status: ${status}"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "paragraph",
+                                                    "content": [
+                                                        {
+                                                            "type": "text",
+                                                            "text": "Build URL: ${BUILD_URL}"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "paragraph",
+                                                    "content": [
+                                                        {
+                                                            "type": "text",
+                                                            "text": "Branch: ${BRANCH_CLEAN}"
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        "issuetype": {"name": "Task"}
+                                    }
+                                }' \
+                                https://etud-team-devops.atlassian.net/rest/api/3/issue || echo "JIRA API call failed but continuing..."
                         """
                     }
                 }
             }
         }
-
-        /* ===============================
-           DEPLOY PART (main branch only)
-           =============================== */
-
         stage('Build Docker Images') {
             when { branch 'main' }
             steps {
@@ -238,13 +251,15 @@ pipeline {
                 }
             }
         }
+
+
     }
 
     post {
-        success {
+        success { 
             echo "✅ Build OK - Quality Gate: ${env.QG_STATUS}"
         }
-        failure {
+        failure { 
             echo "❌ Build Failed"
         }
         always {
