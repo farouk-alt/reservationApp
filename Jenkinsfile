@@ -3,13 +3,19 @@ pipeline {
     agent any
 
     environment {
-        SONAR_HOST_URL = 'http://sonarqube:9000'
-        SONAR_LOGIN = credentials('sonarqube-token')
-        JIRA_TOKEN = credentials('jira-token')
+    SONAR_HOST_URL = 'http://sonarqube:9000'
+    SONAR_LOGIN = credentials('sonarqube-token')
+    JIRA_TOKEN = credentials('jira-token')
+    
+    BRANCH_CLEAN = "${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-') ?: 'main'}"
+    SONAR_PROJECT_KEY = "reservationApp-${BRANCH_CLEAN}"
 
-        BRANCH_CLEAN = "${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-') ?: 'main'}"
-        SONAR_PROJECT_KEY = "reservationApp-${BRANCH_CLEAN}"
-    }
+    // 🔥 ADD THESE 3 VARIABLES
+    DOCKER_BACKEND_IMAGE = "faroukelrey19008/reservation-backend"
+    DOCKER_FRONTEND_IMAGE = "faroukelrey19008/reservation-frontend"
+    IMAGE_TAG = "${env.BUILD_NUMBER}"
+   }
+
 
     stages {
 
