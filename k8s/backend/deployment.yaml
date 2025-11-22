@@ -19,13 +19,13 @@ spec:
         app: backend
       annotations:
         # This annotation forces pod restart when image changes
-        image-version: "58"
+        image-version: "60"
     spec:
       imagePullSecrets:
         - name: regcred
       containers:
         - name: backend
-          image: faroukelrey19008/reservation-backend:58
+          image: faroukelrey19008/reservation-backend:60
           imagePullPolicy: Always  # Changed from IfNotPresent
           ports:
             - containerPort: 9000
