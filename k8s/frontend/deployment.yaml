@@ -21,11 +21,11 @@ spec:
         app: frontend
       annotations:
         # This annotation forces pod restart when image changes
-        image-version: "BUILD_NUMBER_PLACEHOLDER"
+        image-version: "55"
     spec:
       containers:
         - name: frontend
-          image: faroukelrey19008/reservation-frontend:BUILD_NUMBER_PLACEHOLDER
+          image: faroukelrey19008/reservation-frontend:55
           imagePullPolicy: Always  # Changed from IfNotPresent
           ports:
             - containerPort: 3000
