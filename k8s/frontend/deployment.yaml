@@ -68,7 +68,7 @@ metadata:
     argocd-image-updater.argoproj.io/image-list: frontend=faroukelrey19008/reservation-frontend
     argocd-image-updater.argoproj.io/frontend.update-strategy: latest
     argocd-image-updater.argoproj.io/frontend.pull-secret: regcred
-    argocd.argoproj.io/sync-options: Replace=true
+    argocd.argoproj.io/sync-options: Prune=true
 spec:
   replicas: 1
   selector:
@@ -83,18 +83,18 @@ spec:
         - name: regcred
       containers:
         - name: frontend
-          image: faroukelrey19008/reservation-frontend:61
+          image: faroukelrey19008/reservation-frontend:62
           ports:
-            - containerPort: 3000
+            - containerPort: 80
           readinessProbe:
             httpGet:
               path: /
-              port: 3000
+              port: 
             initialDelaySeconds: 5
             periodSeconds: 5
           livenessProbe:
             httpGet:
               path: /
-              port: 3000
+              port: 80
             initialDelaySeconds: 10
             periodSeconds: 10
