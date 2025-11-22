@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: faroukelrey19008/frontend:latest  
+          image: faroukelrey19008/reservation-frontend:51
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000

@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: faroukelrey19008/backend:latest
+          image: faroukelrey19008/reservation-backend:51
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9000
