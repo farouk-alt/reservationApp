@@ -80,10 +80,17 @@ spec:
         - name: regcred
       containers:
         - name: frontend
-          image: faroukelrey19008/reservation-frontend:62
+          image: faroukelrey19008/reservation-frontend:63
           ports:
-            - containerPort: 80
+          - containerPort: 80
           readinessProbe:
             httpGet:
               path: /
+              port: 80
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+
 
