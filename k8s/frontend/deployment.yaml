@@ -5,6 +5,8 @@ metadata:
   namespace: reservation-app
   labels:
     app: frontend
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=true
 spec:
   replicas: 1
   selector:
@@ -17,7 +19,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: faroukelrey19008/frontend:latest  
+          image: faroukelrey19008/reservation-frontend:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -46,3 +48,4 @@ spec:
               port: 3000
             initialDelaySeconds: 10
             periodSeconds: 5
+

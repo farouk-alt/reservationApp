@@ -5,6 +5,8 @@ metadata:
   namespace: reservation-app
   labels:
     app: backend
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=true
 spec:
   replicas: 1
   selector:
@@ -17,7 +19,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: faroukelrey19008/backend:latest
+          image: faroukelrey19008/reservation-backend:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9000
@@ -44,3 +46,4 @@ spec:
               port: 9000
             initialDelaySeconds: 10
             periodSeconds: 5
+
