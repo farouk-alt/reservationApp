@@ -236,42 +236,6 @@ pipeline {
             }
         }
 
-        stage('Update K8s Manifests') {
-            when {
-                expression { env.BRANCH_CLEAN == 'main' }
-            }
-            steps {
-                withCredentials([string(credentialsId: 'jenkins-token', variable: 'GITHUB_TOKEN')]) {
-                    sh """
-                        # Configure git
-                        git config user.email "jenkins@ci.com"
-                        git config user.name "Jenkins CI"
-                        
-                        # Update backend deployment with build number
-                        sed -i 's|image: faroukelrey19008/reservation-backend:.*|image: ${DOCKER_BACKEND_IMAGE}:${IMAGE_TAG}|g' k8s/backend/deployment.yaml
-                        sed -i 's|image-version: ".*"|image-version: "${IMAGE_TAG}"|g' k8s/backend/deployment.yaml
-                        
-                        # Update frontend deployment with build number
-                        sed -i 's|image: faroukelrey19008/reservation-frontend:.*|image: ${DOCKER_FRONTEND_IMAGE}:${IMAGE_TAG}|g' k8s/frontend/deployment.yaml
-                        sed -i 's|image-version: ".*"|image-version: "${IMAGE_TAG}"|g' k8s/frontend/deployment.yaml
-                        
-                        # Show changes
-                        echo "=== Backend Deployment Changes ==="
-                        git diff k8s/backend/deployment.yaml
-                        echo "=== Frontend Deployment Changes ==="
-                        git diff k8s/frontend/deployment.yaml
-                        
-                        # Commit and push
-                        git add k8s/backend/deployment.yaml k8s/frontend/deployment.yaml
-                        git commit -m "[Jenkins CI] Deploy build #${IMAGE_TAG} - ${env.GIT_COMMIT?.take(7)}" || echo "No changes to commit"
-                        
-                        # Push using PAT
-                        git push https://x-access-token:${GITHUB_TOKEN}@github.com/farouk-alt/reservationApp.git HEAD:main
-                    """
-                }
-            }
-        }
-
         stage('Trigger ArgoCD Sync') {
             when {
                 expression { env.BRANCH_CLEAN == 'main' }
