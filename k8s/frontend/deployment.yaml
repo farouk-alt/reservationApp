@@ -63,21 +63,18 @@ metadata:
   namespace: reservation-app
   labels:
     app: frontend
-  annotations:
-    argocd.argoproj.io/compare-options: IgnoreExtraneous
-    argocd-image-updater.argoproj.io/image-list: frontend=faroukelrey19008/reservation-frontend
-    argocd-image-updater.argoproj.io/frontend.update-strategy: latest
-    argocd-image-updater.argoproj.io/frontend.pull-secret: regcred
-    argocd.argoproj.io/sync-options: Prune=true
+    app.kubernetes.io/name: reservation-app
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: frontend
+      app.kubernetes.io/name: reservation-app
   template:
     metadata:
       labels:
         app: frontend
+        app.kubernetes.io/name: reservation-app
     spec:
       imagePullSecrets:
         - name: regcred
@@ -89,12 +86,4 @@ spec:
           readinessProbe:
             httpGet:
               path: /
-              port: 
-            initialDelaySeconds: 5
-            periodSeconds: 5
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 10
-            periodSeconds: 10
+
