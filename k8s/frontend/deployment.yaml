@@ -23,6 +23,8 @@ spec:
         # This annotation forces pod restart when image changes
         image-version: "58"
     spec:
+      imagePullSecrets:
+        - name: regcred
       containers:
         - name: frontend
           image: faroukelrey19008/reservation-frontend:58
