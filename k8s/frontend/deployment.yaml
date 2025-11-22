@@ -1,3 +1,6 @@
+
+---
+# frontend/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,11 +19,14 @@ spec:
     metadata:
       labels:
         app: frontend
+      annotations:
+        # This annotation forces pod restart when image changes
+        image-version: "BUILD_NUMBER_PLACEHOLDER"
     spec:
       containers:
         - name: frontend
-          image: faroukelrey19008/reservation-frontend:latest
-          imagePullPolicy: IfNotPresent
+          image: faroukelrey19008/reservation-frontend:BUILD_NUMBER_PLACEHOLDER
+          imagePullPolicy: Always  # Changed from IfNotPresent
           ports:
             - containerPort: 3000
               name: http
@@ -48,4 +54,3 @@ spec:
               port: 3000
             initialDelaySeconds: 10
             periodSeconds: 5
-

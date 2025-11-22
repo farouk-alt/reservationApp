@@ -3,19 +3,17 @@ pipeline {
     agent any
 
     environment {
-    SONAR_HOST_URL = 'http://sonarqube:9000'
-    SONAR_LOGIN = credentials('sonarqube-token')
-    JIRA_TOKEN = credentials('jira-token')
-    
-    BRANCH_CLEAN = "${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-') ?: 'main'}"
-    SONAR_PROJECT_KEY = "reservationApp-${BRANCH_CLEAN}"
+        SONAR_HOST_URL = 'http://sonarqube:9000'
+        SONAR_LOGIN = credentials('sonarqube-token')
+        JIRA_TOKEN = credentials('jira-token')
+        
+        BRANCH_CLEAN = "${env.GIT_BRANCH?.replace('origin/', '').replace('/', '-') ?: 'main'}"
+        SONAR_PROJECT_KEY = "reservationApp-${BRANCH_CLEAN}"
 
-    // 🔥 ADD THESE 3 VARIABL
-    DOCKER_BACKEND_IMAGE = "faroukelrey19008/reservation-backend"
-    DOCKER_FRONTEND_IMAGE = "faroukelrey19008/reservation-frontend"
-    IMAGE_TAG = "${env.BUILD_NUMBER}"
-   }
-
+        DOCKER_BACKEND_IMAGE = "faroukelrey19008/reservation-backend"
+        DOCKER_FRONTEND_IMAGE = "faroukelrey19008/reservation-frontend"
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+    }
 
     stages {
 
@@ -151,10 +149,8 @@ pipeline {
                         def status = env.QG_STATUS ?: 'UNKNOWN'
                         
                         sh """
-                            # Create base64 auth WITHOUT line breaks (-w 0 is crucial)
                             AUTH=\$(printf "%s:%s" "\$J_EMAIL" "\$J_TOKEN" | base64 -w 0)
                             
-                            # Make the API call with Atlassian Document Format
                             curl -X POST \
                                 -H "Authorization: Basic \$AUTH" \
                                 -H "Content-Type: application/json" \
@@ -204,15 +200,16 @@ pipeline {
                 }
             }
         }
+
         stage('Build Docker Images') {
             when {
                 expression { env.BRANCH_CLEAN == 'main' }
             }
-
             steps {
                 sh """
-                    docker build -t ${DOCKER_BACKEND_IMAGE}:${IMAGE_TAG} ./backend
-                    docker build -t ${DOCKER_FRONTEND_IMAGE}:${IMAGE_TAG} ./frontend
+                    echo "Building Docker images with tag: ${IMAGE_TAG}"
+                    docker build -t ${DOCKER_BACKEND_IMAGE}:${IMAGE_TAG} -t ${DOCKER_BACKEND_IMAGE}:latest ./backend
+                    docker build -t ${DOCKER_FRONTEND_IMAGE}:${IMAGE_TAG} -t ${DOCKER_FRONTEND_IMAGE}:latest ./frontend
                 """
             }
         }
@@ -221,7 +218,6 @@ pipeline {
             when {
                 expression { env.BRANCH_CLEAN == 'main' }
             }
-
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'docker-hub-creds',
@@ -229,56 +225,119 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh """
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
                         docker push ${DOCKER_BACKEND_IMAGE}:${IMAGE_TAG}
+                        docker push ${DOCKER_BACKEND_IMAGE}:latest
                         docker push ${DOCKER_FRONTEND_IMAGE}:${IMAGE_TAG}
+                        docker push ${DOCKER_FRONTEND_IMAGE}:latest
                         docker logout
                     """
                 }
             }
         }
 
-        stage('Update Manifests & Push to GitHub') {
+        stage('Update K8s Manifests') {
             when {
                 expression { env.BRANCH_CLEAN == 'main' }
             }
-
             steps {
                 withCredentials([string(credentialsId: 'jenkins-token', variable: 'GITHUB_TOKEN')]) {
                     sh """
-                        # Update backend deployment image
-                        sed -i 's|image: .*/backend:.*|image: ${DOCKER_BACKEND_IMAGE}:${IMAGE_TAG}|' k8s/backend/deployment.yaml
-
-                        # Update frontend deployment image
-                        sed -i 's|image: .*/frontend:.*|image: ${DOCKER_FRONTEND_IMAGE}:${IMAGE_TAG}|' k8s/frontend/deployment.yaml
-
-                        git config user.email "ci@jenkins.com"
+                        # Configure git
+                        git config user.email "jenkins@ci.com"
                         git config user.name "Jenkins CI"
-
-                        git status
-
+                        
+                        # Update backend deployment with build number
+                        sed -i 's|image: faroukelrey19008/reservation-backend:.*|image: ${DOCKER_BACKEND_IMAGE}:${IMAGE_TAG}|g' k8s/backend/deployment.yaml
+                        sed -i 's|image-version: ".*"|image-version: "${IMAGE_TAG}"|g' k8s/backend/deployment.yaml
+                        
+                        # Update frontend deployment with build number
+                        sed -i 's|image: faroukelrey19008/reservation-frontend:.*|image: ${DOCKER_FRONTEND_IMAGE}:${IMAGE_TAG}|g' k8s/frontend/deployment.yaml
+                        sed -i 's|image-version: ".*"|image-version: "${IMAGE_TAG}"|g' k8s/frontend/deployment.yaml
+                        
+                        # Show changes
+                        echo "=== Backend Deployment Changes ==="
+                        git diff k8s/backend/deployment.yaml
+                        echo "=== Frontend Deployment Changes ==="
+                        git diff k8s/frontend/deployment.yaml
+                        
+                        # Commit and push
                         git add k8s/backend/deployment.yaml k8s/frontend/deployment.yaml
-                        git commit -m "Deploy build ${IMAGE_TAG}" || echo "Nothing to commit"
-
-                        # Push using token (avoids SSH config)
-                        git push https://x-access-token:${GITHUB_TOKEN}@github.com/farouk-alt/reservationApp.git HEAD:${BRANCH_CLEAN}
+                        git commit -m "[Jenkins CI] Deploy build #${IMAGE_TAG} - ${env.GIT_COMMIT?.take(7)}" || echo "No changes to commit"
+                        
+                        # Push using PAT
+                        git push https://x-access-token:${GITHUB_TOKEN}@github.com/farouk-alt/reservationApp.git HEAD:main
                     """
                 }
             }
         }
 
+        stage('Trigger ArgoCD Sync') {
+            when {
+                expression { env.BRANCH_CLEAN == 'main' }
+            }
+            steps {
+                withCredentials([string(credentialsId: 'argocd-token', variable: 'ARGOCD_TOKEN')]) {
+                    script {
+                        // Wait for GitHub to process the push
+                        sleep(time: 10, unit: 'SECONDS')
+                        
+                        sh """
+                            # Install ArgoCD CLI if not present
+                            if [ ! -f /usr/local/bin/argocd ]; then
+                                echo "Installing ArgoCD CLI..."
+                                curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/v2.9.3/argocd-linux-amd64
+                                chmod +x /usr/local/bin/argocd
+                            fi
+                            
+                            # Use internal Kubernetes service DNS (both Jenkins and ArgoCD are in same cluster)
+                            ARGOCD_SERVER="argocd-server.argocd.svc.cluster.local:80"
+                            
+                            # Sync the application
+                            echo "Triggering ArgoCD sync for reservation-app..."
+                            argocd app sync reservation-app \
+                                --server \$ARGOCD_SERVER \
+                                --auth-token \$ARGOCD_TOKEN \
+                                --plaintext \
+                                --grpc-web \
+                                --force \
+                                --prune || echo "ArgoCD sync command failed, but continuing..."
+                            
+                            # Wait for sync to complete
+                            echo "Waiting for ArgoCD sync to complete..."
+                            argocd app wait reservation-app \
+                                --server \$ARGOCD_SERVER \
+                                --auth-token \$ARGOCD_TOKEN \
+                                --plaintext \
+                                --grpc-web \
+                                --timeout 300 || echo "ArgoCD wait timed out, check manually"
+                            
+                            # Show sync status
+                            argocd app get reservation-app \
+                                --server \$ARGOCD_SERVER \
+                                --auth-token \$ARGOCD_TOKEN \
+                                --plaintext \
+                                --grpc-web || true
+                        """
+                    }
+                }
+            }
+        }
 
     }
 
     post {
         success { 
             echo "✅ Build OK - Quality Gate: ${env.QG_STATUS}"
+            echo "✅ Deployed version: ${IMAGE_TAG}"
         }
         failure { 
             echo "❌ Build Failed"
         }
         always {
             echo "Pipeline completed. Check reports in workspace/reports/"
+            // Cleanup old docker images
+            sh "docker system prune -f || true"
         }
     }
 }
