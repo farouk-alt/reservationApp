@@ -4,9 +4,7 @@ kind: Kustomization
 namespace: reservation-app
 
 resources:
-  - namespace.yaml
-  - database/deployment.yaml
-  - database/service.yaml
+  # Application deployments (managed by ArgoCD)
   - backend/configmap.yaml
   - backend/secret.yaml
   - backend/deployment.yaml
