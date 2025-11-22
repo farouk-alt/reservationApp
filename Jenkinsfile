@@ -291,13 +291,13 @@ pipeline {
                             fi
                             
                             # Use internal Kubernetes service DNS (both Jenkins and ArgoCD are in same cluster)
-                            ARGOCD_SERVER="argocd-server.argocd.svc.cluster.local:80"
+                            ARGOCD_SERVER="host.docker.internal:32050"
                             
                             # Sync the application
                             echo "Triggering ArgoCD sync for reservation-app..."
                             argocd app sync reservation-app \
-                                --server \$ARGOCD_SERVER \
-                                --auth-token \$ARGOCD_TOKEN \
+                                --server $ARGOCD_SERVER \
+                                --auth-token $ARGOCD_TOKEN \
                                 --plaintext \
                                 --grpc-web \
                                 --force \
