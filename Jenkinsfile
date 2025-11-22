@@ -235,7 +235,22 @@ pipeline {
                 }
             }
         }
-
+        stage('Update K8s Manifests') {
+            steps {
+                sh """
+                    # Update backend image
+                    sed -i 's|image: faroukelrey19008/reservation-backend:.*|image: faroukelrey19008/reservation-backend:${BUILD_NUMBER}|' k8s/backend/deployment.yaml
+                    
+                    # Update frontend image
+                    sed -i 's|image: faroukelrey19008/reservation-frontend:.*|image: faroukelrey19008/reservation-frontend:${BUILD_NUMBER}|' k8s/frontend/deployment.yaml
+                    
+                    # Commit and push
+                    git add k8s/
+                    git commit -m "Deploy build #${BUILD_NUMBER}"
+                    git push origin main
+                """
+            }
+        }
         stage('Trigger ArgoCD Sync') {
             when {
                 expression { env.BRANCH_CLEAN == 'main' }
