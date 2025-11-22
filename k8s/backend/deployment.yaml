@@ -6,20 +6,20 @@ metadata:
   labels:
     app: backend
   annotations:
-    argocd.argoproj.io/compare-options: IgnoreExtraneous     # <-- IMPORTANT FIX
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
+    argocd.argoproj.io/sync-options: Replace=true,Prune=true
     argocd-image-updater.argoproj.io/image-list: backend=faroukelrey19008/reservation-backend
     argocd-image-updater.argoproj.io/backend.update-strategy: latest
     argocd-image-updater.argoproj.io/backend.pull-secret: regcred
-    argocd.argoproj.io/sync-options: Prune=true
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: backend     # IMMUTABLE — must never change
+      app: backend
   template:
     metadata:
       labels:
-        app: backend   # MUST match the selector exactly
+        app: backend
       annotations:
         image-version: "60"
     spec:

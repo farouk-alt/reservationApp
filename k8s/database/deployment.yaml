@@ -6,7 +6,8 @@ metadata:
   labels:
     app: mysql
   annotations:
-    argocd.argoproj.io/compare-options: IgnoreExtraneous    # <-- IMPORTANT FIX
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
+    argocd.argoproj.io/sync-options: Replace=true,Prune=true
 spec:
   replicas: 1
   selector:
