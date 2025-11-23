@@ -264,57 +264,49 @@ pipeline {
             }
         }
 
-        stage('Trigger ArgoCD Sync') {
-            when {
-                expression { env.BRANCH_CLEAN == 'main' }
-            }
-            steps {
-                withCredentials([string(credentialsId: 'argocd-token', variable: 'ARGOCD_TOKEN')]) {
-                    script {
-                        // Wait for GitHub to process the push
-                        sleep(time: 10, unit: 'SECONDS')
-                        
-                        sh """
-                            # Install ArgoCD CLI if not present
-                            if [ ! -f /usr/local/bin/argocd ]; then
-                                echo "Installing ArgoCD CLI..."
-                                curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/v2.9.3/argocd-linux-amd64
-                                chmod +x /usr/local/bin/argocd
-                            fi
-                            
-                            # Use internal Kubernetes service DNS (both Jenkins and ArgoCD are in same cluster)
-                            ARGOCD_SERVER="host.docker.internal:32050"
-                            
-                            # Sync the application
-                            echo "Triggering ArgoCD sync for reservation-app..."
-                            argocd app sync reservation-app \
-                                --server $ARGOCD_SERVER \
-                                --auth-token $ARGOCD_TOKEN \
-                                --plaintext \
-                                --grpc-web \
-                                --force \
-                                --prune || echo "ArgoCD sync command failed, but continuing..."
-                            
-                            # Wait for sync to complete
-                            echo "Waiting for ArgoCD sync to complete..."
-                            argocd app wait reservation-app \
-                                --server \$ARGOCD_SERVER \
-                                --auth-token \$ARGOCD_TOKEN \
-                                --plaintext \
-                                --grpc-web \
-                                --timeout 300 || echo "ArgoCD wait timed out, check manually"
-                            
-                            # Show sync status
-                            argocd app get reservation-app \
-                                --server \$ARGOCD_SERVER \
-                                --auth-token \$ARGOCD_TOKEN \
-                                --plaintext \
-                                --grpc-web || true
-                        """
-                    }
-                }
+    stage('Trigger ArgoCD Sync') {
+        when {
+            expression { env.BRANCH_CLEAN == 'main' }
+        }
+        steps {
+            withCredentials([string(credentialsId: 'argocd-token', variable: 'ARGOCD_TOKEN')]) {
+                sh """
+                    # Install ArgoCD CLI if not present
+                    if [ ! -f /usr/local/bin/argocd ]; then
+                        echo "Installing ArgoCD CLI..."
+                        curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/v2.9.3/argocd-linux-amd64
+                        chmod +x /usr/local/bin/argocd
+                    fi
+
+                    export ARGOCD_SERVER="host.docker.internal:32050"
+
+                    echo "Triggering ArgoCD sync..."
+                    argocd app sync reservation-app \
+                        --server $ARGOCD_SERVER \
+                        --auth-token $ARGOCD_TOKEN \
+                        --plaintext \
+                        --grpc-web \
+                        --force \
+                        --prune || true
+
+                    echo "Waiting for ArgoCD sync..."
+                    argocd app wait reservation-app \
+                        --server $ARGOCD_SERVER \
+                        --auth-token $ARGOCD_TOKEN \
+                        --plaintext \
+                        --grpc-web \
+                        --timeout 300 || true
+
+                    argocd app get reservation-app \
+                        --server $ARGOCD_SERVER \
+                        --auth-token $ARGOCD_TOKEN \
+                        --plaintext \
+                        --grpc-web || true
+                """
             }
         }
+    }
+
 
     }
 
