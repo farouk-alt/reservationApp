@@ -20,6 +20,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+                sh "git fetch --all"
                 sh "mkdir -p reports"
             }
         }
@@ -247,7 +248,7 @@ pipeline {
                     # Commit and push
                     git add k8s/
                     git commit -m "Deploy build #${BUILD_NUMBER}"
-                    git push origin main
+                    git push origin HEAD:refs/heads/main
                 """
             }
         }

@@ -9,8 +9,9 @@ spec:
   type: ClusterIP
   ports:
     - name: http
-      port: 80          # ingress will hit this port
-      targetPort: 80    # nginx container listens on 80
+      port: 80
+      targetPort: 80
       protocol: TCP
   selector:
     app: frontend
+    app.kubernetes.io/name: reservation-app
