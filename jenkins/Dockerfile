@@ -3,7 +3,7 @@ USER root
 
 # =========
 # PHP + Composer + NodeJS
-# ===============
+# ========
 RUN apt-get update && apt-get install -y \
     php php-cli php-mbstring php-xml php-curl php-zip php-mysql \
     unzip curl wget gnupg build-essential python3 python3-pip \
