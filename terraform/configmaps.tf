@@ -79,15 +79,15 @@ resource "kubernetes_secret" "app_secrets" {
 
   data = {
     # JWT Secret
-    JWT_SECRET = base64encode("your-jwt-secret-here-change-in-production")
+    JWT_SECRET = "your-jwt-secret-here-change-in-production"
     
     # API Keys (examples)
-    STRIPE_KEY    = base64encode("sk_test_xxx")
-    STRIPE_SECRET = base64encode("secret_xxx")
+    STRIPE_KEY    = "sk_test_xxx"
+    STRIPE_SECRET = "secret_xxx"
     
     # OAuth (if needed)
-    GOOGLE_CLIENT_ID     = base64encode("xxx.apps.googleusercontent.com")
-    GOOGLE_CLIENT_SECRET = base64encode("secret")
+    GOOGLE_CLIENT_ID     = "xxx.apps.googleusercontent.com"
+    GOOGLE_CLIENT_SECRET = "secret"
   }
 
   type = "Opaque"

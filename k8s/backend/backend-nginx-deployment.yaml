@@ -5,15 +5,21 @@ metadata:
   namespace: reservation-app
   labels:
     app: backend-nginx
+    app.kubernetes.io/name: reservation-app
+    managed-by: argocd
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: backend-nginx
+      app.kubernetes.io/name: reservation-app
+      managed-by: argocd
   template:
     metadata:
       labels:
         app: backend-nginx
+        app.kubernetes.io/name: reservation-app
+        managed-by: argocd
     spec:
       containers:
         - name: nginx
@@ -28,6 +34,3 @@ spec:
         - name: nginx-config
           configMap:
             name: backend-nginx-config
-            items:
-              - key: default.conf
-                path: default.conf

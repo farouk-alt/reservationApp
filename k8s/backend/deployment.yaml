@@ -5,12 +5,6 @@ metadata:
   namespace: reservation-app
   labels:
     app: backend
-  annotations:
-    argocd.argoproj.io/compare-options: IgnoreExtraneous
-    argocd.argoproj.io/sync-options: Replace=true,Prune=true
-    argocd-image-updater.argoproj.io/image-list: backend=faroukelrey19008/reservation-backend
-    argocd-image-updater.argoproj.io/backend.update-strategy: latest
-    argocd-image-updater.argoproj.io/backend.pull-secret: regcred
 spec:
   replicas: 1
   selector:
@@ -20,21 +14,21 @@ spec:
     metadata:
       labels:
         app: backend
-      annotations:
-        image-version: "60"
     spec:
       imagePullSecrets:
         - name: regcred
       containers:
         - name: backend
-          image: faroukelrey19008/reservation-backend:60
-          imagePullPolicy: Always
+          image: faroukelrey19008/reservation-backend:latest  # Change to :latest
+          imagePullPolicy: Always  # Change to Always
           ports:
             - containerPort: 9000
               name: fpm
           envFrom:
             - configMapRef:
                 name: mysql-config
+            - configMapRef:
+                name: laravel-config
             - secretRef:
                 name: mysql-secret
           resources:

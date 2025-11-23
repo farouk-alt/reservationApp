@@ -53,26 +53,8 @@ resource "kubernetes_config_map" "mysql_config" {
   }
 }
 
-# Secret for MySQL passwords
-resource "kubernetes_secret" "mysql_secret" {
-  metadata {
-    name      = "mysql-secret"
-    namespace = kubernetes_namespace.reservation_app.metadata[0].name
-    
-    labels = {
-      app        = "mysql"
-      managed-by = "terraform"
-    }
-  }
 
-  data = {
-    DB_PASSWORD         = base64encode("1010")
-    MYSQL_ROOT_PASSWORD = base64encode("1010")
-    MYSQL_PASSWORD      = base64encode("1010")
-  }
 
-  type = "Opaque"
-}
 
 # MySQL Deployment
 resource "kubernetes_deployment" "mysql" {

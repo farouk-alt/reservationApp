@@ -6,20 +6,41 @@ metadata:
 data:
   default.conf: |
     server {
-        listen 80;
-        server_name _;
+      listen 80;
+      server_name _;
+      
+      # Access logs
+      access_log /var/log/nginx/access.log;
+      error_log /var/log/nginx/error.log;
 
-        root /var/www/html/public;
-        index index.php index.html;
+      location / {
+        # FastCGI pass to backend service on port 9000
+        fastcgi_pass backend:9000;
+        fastcgi_index index.php;
+        
+        # Script filename - critical for Laravel
+        fastcgi_param SCRIPT_FILENAME /var/www/html/public/index.php;
+        fastcgi_param SCRIPT_NAME /index.php;
+        
+        # Include fastcgi params
+        include fastcgi_params;
+        
+        # Additional params
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+        fastcgi_param QUERY_STRING $query_string;
+        fastcgi_param REQUEST_METHOD $request_method;
+        fastcgi_param CONTENT_TYPE $content_type;
+        fastcgi_param CONTENT_LENGTH $content_length;
+        
+        # Timeouts
+        fastcgi_read_timeout 300;
+        fastcgi_send_timeout 300;
+      }
 
-        location / {
-            try_files $uri $uri/ /index.php?$query_string;
-        }
-
-        location ~ \.php$ {
-            include fastcgi_params;
-            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-            fastcgi_param PATH_INFO $fastcgi_path_info;
-            fastcgi_pass backend:9000;  # talk to PHP-FPM service
-        }
+      # Health check
+      location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+      }
     }

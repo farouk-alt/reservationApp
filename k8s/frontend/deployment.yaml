@@ -18,11 +18,15 @@ spec:
         app: frontend
         app.kubernetes.io/name: reservation-app
     spec:
-      imagePullSecrets:
-        - name: regcred
+      # imagePullSecrets:
+      #   - name: regcred
       containers:
         - name: frontend
-          image: faroukelrey19008/reservation-frontend:63
+          image: faroukelrey19008/reservation-frontend:latest
+          imagePullPolicy: Always
+          env:
+            - name: VITE_API_URL
+              value: "http://reservation.local/api"
           ports:
           - containerPort: 80
           readinessProbe:

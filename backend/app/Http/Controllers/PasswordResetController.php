@@ -30,7 +30,7 @@ class PasswordResetController extends Controller
         );
 
         // FRONTEND URL
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+        $frontendUrl = env('FRONTEND_URL', 'http://reservation.local');
 
         $resetLink = $frontendUrl . '/reset-password?token=' . $token . '&email=' . urlencode($email);
 

@@ -3,14 +3,12 @@ kind: Service
 metadata:
   name: backend
   namespace: reservation-app
-  labels:
-    app: backend
 spec:
   type: ClusterIP
-  ports:
-  - port: 9000
-    targetPort: 9000
-    protocol: TCP
-    name: fpm
   selector:
     app: backend
+  ports:
+    - name: fpm
+      port: 9000
+      targetPort: 9000
+      protocol: TCP

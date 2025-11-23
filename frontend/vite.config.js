@@ -23,8 +23,7 @@ export default defineConfig({
       interval: 1000,     // Check for changes every second
     },
     hmr: {
-      host: 'localhost',
-      port: 5173,
+      host: 'reservation.local',
     },
   },
 })

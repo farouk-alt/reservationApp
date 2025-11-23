@@ -15,8 +15,8 @@
 
 # Environment files
 .env
-.env.backup
-.env.production
+.env.*
+
 
 # IDE files
 .idea
