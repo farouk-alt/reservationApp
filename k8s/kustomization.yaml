@@ -9,6 +9,9 @@ resources:
   - backend/secret.yaml
   - backend/deployment.yaml
   - backend/service.yaml
+  - backend/backend-nginx-configmap.yaml
+  - backend/backend-nginx-deployment.yaml
+  - backend/backend-nginx-service.yaml
   - frontend/deployment.yaml
   - frontend/service.yaml
 

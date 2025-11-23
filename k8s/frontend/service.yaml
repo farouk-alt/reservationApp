@@ -8,9 +8,9 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - port: 3000
-    targetPort: 3000
-    protocol: TCP
-    name: http
+    - name: http
+      port: 80          # ingress will hit this port
+      targetPort: 80    # nginx container listens on 80
+      protocol: TCP
   selector:
     app: frontend

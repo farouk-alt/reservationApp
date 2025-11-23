@@ -1,75 +1,31 @@
-# ==========================================
-# Dockerfile pour Backend Laravel + Liquibase
-# ==========================================
-
 FROM php:8.2-fpm
 
-# Installer les dépendances système
+# 1. Install required libs + nginx + supervisor
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    netcat-openbsd \
-    zip \
-    unzip \
-    wget \
-    default-jre \
-    && rm -rf /var/lib/apt/lists/*
+    nginx supervisor git curl unzip libpng-dev libonig-dev \
+    && docker-php-ext-install pdo pdo_mysql mbstring gd
 
-# 👉 Install Redis extension correctly
-RUN pecl install redis \
-    && docker-php-ext-enable redis
-
-# Installer les extensions PHP
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
-
-# Installer Composer
+# 2. Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# ==========================================
-# Installer Liquibase
-# ==========================================
-RUN wget https://github.com/liquibase/liquibase/releases/download/v5.0.1/liquibase-5.0.1.zip -O /tmp/liquibase.zip \
-    && unzip /tmp/liquibase.zip -d /opt/liquibase \
-    && rm /tmp/liquibase.zip \
-    && chmod -x /opt/liquibase/liquibase
-
-# Télécharger le driver MySQL pour Liquibase
-RUN wget https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/9.1.0/mysql-connector-j-9.1.0.jar \
-    -O /opt/liquibase/lib/mysql-connector-j-9.1.0.jar
-
-# Ajouter Liquibase au PATH
-ENV PATH="${PATH}:/opt/liquibase"
-
-# Définir le répertoire de travail
+# 3. Set working dir
 WORKDIR /var/www/html
 
-# Copier les fichiers du projet
-COPY . /var/www/html
-
-# Installer les dépendances Laravel
-RUN composer install --no-interaction --optimize-autoloader --no-dev
-
-# Copy application code (excluding items in .dockerignore)
+# 4. Copy app files
 COPY . .
 
-# Copy Liquibase changelog folder inside the image
-COPY database/liquibase /liquibase/changelog
+# 5. Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader
 
-# Copy liquibase.properties for Kubernetes Jobs
-COPY liquibase.properties /liquibase/liquibase.properties
+# 6. Copy configs
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY supervisord.conf /etc/supervisor/supervisord.conf
 
-# Set proper permissions and remove any existing storage link
-RUN rm -f public/storage \
-    && mkdir -p storage/framework/{sessions,views,cache} \
-    && mkdir -p storage/app/public \
-    && mkdir -p bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+# 7. Fix permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/storage
 
-# Expose the port
-EXPOSE 9000
+EXPOSE 80
 
-CMD ["php-fpm"]
+# 8. Start supervisor (runs both nginx + php-fpm)
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
