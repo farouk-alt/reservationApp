@@ -26,6 +26,8 @@ spec:
           ports:
             - containerPort: 9000
               name: fpm
+            # - name: metrics
+            #   containerPort: 8000
           envFrom:
             - configMapRef:
                 name: mysql-config

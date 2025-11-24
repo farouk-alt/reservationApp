@@ -20,21 +20,22 @@ class Kernel extends HttpKernel
     ];
 
     protected $middlewareGroups = [
-    'api' => [
-        \Illuminate\Routing\Middleware\SubstituteBindings::class,
-        \App\Http\Middleware\MetricsMiddleware::class,
-    ],
+        'api' => [
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\PromMetricsMiddleware::class,
+        ],
     ];
 
 
-    protected function schedule(Schedule $schedule)
-{
-    $schedule->call(function () {
-        \App\Models\Reservation::where('statut', 'confirmée')
-            ->whereRaw("ADDTIME(heure_res, SEC_TO_TIME(duree * 3600)) < CURTIME()")
-            ->where('date_res', now()->toDateString())
-            ->update(['statut' => 'terminée']);
-    })->hourly(); // runs every hour
-}
+
+//     protected function schedule(Schedule $schedule)
+// {
+//     $schedule->call(function () {
+//         \App\Models\Reservation::where('statut', 'confirmée')
+//             ->whereRaw("ADDTIME(heure_res, SEC_TO_TIME(duree * 3600)) < CURTIME()")
+//             ->where('date_res', now()->toDateString())
+//             ->update(['statut' => 'terminée']);
+//     })->hourly(); // runs every hour
+// }
 
 }
