@@ -1,7 +1,7 @@
 FROM jenkins/jenkins:lts
 USER root
 
-# =========
+# ===
 # PHP + Composer + NodeJS
 # ========
 RUN apt-get update && apt-get install -y \
