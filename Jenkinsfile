@@ -285,23 +285,23 @@ pipeline {
                     argocd app sync reservation-app \
                         --server $ARGOCD_SERVER \
                         --auth-token $ARGOCD_TOKEN \
-                        --plaintext \
+                        --insecure \
                         --grpc-web \
                         --force \
-                        --prune || true
+                        --prune
 
                     echo "Waiting for ArgoCD sync..."
                     argocd app wait reservation-app \
                         --server $ARGOCD_SERVER \
                         --auth-token $ARGOCD_TOKEN \
-                        --plaintext \
+                        --insecure \
                         --grpc-web \
                         --timeout 300 || true
 
                     argocd app get reservation-app \
                         --server $ARGOCD_SERVER \
                         --auth-token $ARGOCD_TOKEN \
-                        --plaintext \
+                        --insecure \
                         --grpc-web || true
                 """
             }
