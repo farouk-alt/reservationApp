@@ -145,6 +145,44 @@
 
 # CMD ["/entrypoint.sh"]
 
+
+
+#works fine but not optimal
+# FROM php:8.2-fpm
+
+# RUN apt-get update && apt-get install -y \
+#     git curl unzip libpng-dev libonig-dev libxml2-dev \
+#     && docker-php-ext-install pdo_mysql mbstring xml gd
+
+# WORKDIR /var/www/html
+
+# # Copy ONLY composer files first
+# COPY composer.json composer.lock ./
+
+# # Install composer globally
+# RUN curl -sS https://getcomposer.org/installer \
+#  | php -- --install-dir=/usr/local/bin --filename=composer
+
+# # Install dependencies WITHOUT Laravel source code
+# RUN composer install --no-dev --no-scripts --prefer-dist --optimize-autoloader
+
+# # Now copy the Laravel project
+# COPY . .
+
+# # ✅ IMPORTANT: Remove ALL .env files before running composer scripts
+# RUN find . -name ".env*" -type f -delete
+
+# # Now run composer scripts (needs artisan)
+# RUN composer install --no-dev --optimize-autoloader
+
+# # Set permissions
+# RUN chown -R www-data:www-data /var/www/html \
+#     && chmod -R 775 /var/www/html/storage
+
+# EXPOSE 9000
+# CMD ["php-fpm"]
+
+
 FROM php:8.2-fpm
 
 RUN apt-get update && apt-get install -y \
@@ -153,26 +191,20 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /var/www/html
 
-# Copy ONLY composer files first
-COPY composer.json composer.lock ./
-
-# Install composer globally
+# Install composer
 RUN curl -sS https://getcomposer.org/installer \
  | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Install dependencies WITHOUT Laravel source code
-RUN composer install --no-dev --no-scripts --prefer-dist --optimize-autoloader
-
-# Now copy the Laravel project
+# Copy full Laravel project NOW (important)
 COPY . .
 
-# ✅ IMPORTANT: Remove ALL .env files before running composer scripts
+# Remove local .env files (best practice)
 RUN find . -name ".env*" -type f -delete
 
-# Now run composer scripts (needs artisan)
-RUN composer install --no-dev --optimize-autoloader
+# Install dependencies after copying everything
+RUN composer install --no-dev --prefer-dist --optimize-autoloader
 
-# Set permissions
+# Permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage
 
