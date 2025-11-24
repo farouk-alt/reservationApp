@@ -18,11 +18,10 @@ spec:
         managed-by: argocd
     spec:
       imagePullSecrets:
-        # - name: regcred
-        - name: ghcr-secret
+        - name: regcred
       containers:
         - name: backend
-          image: ghcr.io/farouk-alt/reservation-backend:119
+          image: faroukelrey19008/reservation-backend:120
           imagePullPolicy: Always
           ports:
             - containerPort: 9000
