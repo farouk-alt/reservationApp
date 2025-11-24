@@ -18,7 +18,8 @@ spec:
         managed-by: argocd
     spec:
       imagePullSecrets:
-        - name: regcred
+        # - name: regcred
+        - name: ghcr-secret
       containers:
         - name: backend
           image: ghcr.io/farouk-alt/reservation-backend:119
