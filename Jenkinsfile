@@ -13,6 +13,7 @@ pipeline {
         DOCKER_BACKEND_IMAGE = "faroukelrey19008/reservation-backend"
         DOCKER_FRONTEND_IMAGE = "faroukelrey19008/reservation-frontend"
         IMAGE_TAG = "${env.BUILD_NUMBER}"
+        ARGOCD_SERVER = "host.docker.internal:32050"
     }
 
     stages {
