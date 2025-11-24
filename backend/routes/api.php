@@ -10,6 +10,13 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\AdminController;
 use App\Services\PrometheusService;
 
+// ========================================
+// 📊 PROMETHEUS METRICS ENDPOINT (PUBLIC)
+// ========================================
+Route::get('/metrics', function (PrometheusService $prometheus) {
+    return response($prometheus->render())
+        ->header('Content-Type', 'text/plain; version=0.0.4');
+});
 // Public Auth Routes
 Route::post('/admin/login', [AdminAuthController::class, 'login']);
 Route::post('/employe/register', [EmployeAuthController::class, 'register']);
@@ -49,14 +56,4 @@ Route::middleware('api.auth:sanctum')->group(function () {
     
     // Stats
     Route::get('/admin/stats', [AdminController::class, 'stats']);
-});
-
-Route::get('/metrics', function (PrometheusService $prometheus) {
-    $registry = $prometheus->getRegistry();
-    $renderer = new \Prometheus\RenderTextFormat();
-
-    $metrics = $renderer->render($registry->getMetricFamilySamples());
-
-    return response($metrics)
-        ->header('Content-Type', 'text/plain');
 });

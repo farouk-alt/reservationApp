@@ -13,14 +13,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->alias([
-            'api.auth' => \App\Http\Middleware\ApiAuthenticate::class,
-        ]);
+        // Add Prometheus metrics middleware
+        $middleware->append(\App\Http\Middleware\PrometheusMetrics::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (AuthenticationException $e, $request) {
-            return response()->json([
-                'message' => 'Unauthenticated.'
-            ], 401);
+            return response()->json(['message' => 'Unauthenticated.'], 401);
         });
     })->create();
