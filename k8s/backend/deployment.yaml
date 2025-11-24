@@ -22,9 +22,9 @@ spec:
       containers:
         - name: backend
 <<<<<<< HEAD
-          image: faroukelrey19008/reservation-backend:96
+          image: faroukelrey19008/reservation-backend:105
 =======
-          image: faroukelrey19008/reservation-backend:102
+          image: faroukelrey19008/reservation-backend:105
 >>>>>>> a615363dbbb32585a9c00be8c115a3367d76aff8
           imagePullPolicy: Always  # Change to Always
           ports:
