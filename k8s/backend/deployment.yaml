@@ -21,7 +21,7 @@ spec:
         - name: regcred
       containers:
         - name: backend
-          image: faroukelrey19008/reservation-backend:101
+          image: faroukelrey19008/reservation-backend:102
           imagePullPolicy: Always  # Change to Always
           ports:
             - containerPort: 9000
