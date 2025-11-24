@@ -21,13 +21,11 @@ spec:
         - name: regcred
       containers:
         - name: backend
-          image: faroukelrey19008/reservation-backend:93
+          image: faroukelrey19008/reservation-backend:96
           imagePullPolicy: Always  # Change to Always
           ports:
             - containerPort: 9000
               name: fpm
-            # - name: metrics
-            #   containerPort: 8000
           envFrom:
             - configMapRef:
                 name: mysql-config

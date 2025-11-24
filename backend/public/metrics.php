@@ -1,13 +1,19 @@
 <?php
 
+use Prometheus\RenderTextFormat;
+
 require __DIR__ . '/../vendor/autoload.php';
 
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
-$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
-
+/** @var \App\Services\PrometheusService $prometheus */
 $prometheus = $app->make(\App\Services\PrometheusService::class);
 
-header('Content-Type: text/plain');
+/** @var \Prometheus\CollectorRegistry $registry */
+$registry = $prometheus->getRegistry();
 
-echo $prometheus->getMetrics();
+$renderer = new RenderTextFormat();
+
+header('Content-Type: ' . RenderTextFormat::MIME_TYPE);
+
+echo $renderer->render($registry->getMetricFamilySamples());
