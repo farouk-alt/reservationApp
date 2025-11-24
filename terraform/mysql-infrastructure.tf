@@ -42,15 +42,17 @@ resource "kubernetes_config_map" "mysql_config" {
   }
 
   data = {
-    DB_HOST     = "mysql"
-    DB_PORT     = "3306"
-    DB_DATABASE = "reservation_db"
-    DB_USERNAME = "root"
-    
-    # Extra fields for compatibility
+    DB_CONNECTION = "mysql"
+    DB_HOST       = "mysql"
+    DB_PORT       = "3306"
+    DB_DATABASE   = "reservation_db"
+    DB_USERNAME   = "root"
+
+    # Optional extras (not used by Laravel)
     MYSQL_DATABASE = "reservation_db"
     MYSQL_USER     = "root"
   }
+
 }
 
 
@@ -163,7 +165,7 @@ resource "kubernetes_service" "mysql" {
   metadata {
     name      = "mysql"
     namespace = kubernetes_namespace.reservation_app.metadata[0].name
-    
+
     labels = {
       app        = "mysql"
       managed-by = "terraform"
@@ -183,7 +185,7 @@ resource "kubernetes_service" "mysql" {
       protocol    = "TCP"
     }
 
-    cluster_ip = "None"  # Headless service
-    type       = "ClusterIP"
+    type = "ClusterIP"   # <-- FIXED
   }
 }
+
