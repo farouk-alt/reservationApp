@@ -22,7 +22,7 @@ spec:
       #   - name: regcred
       containers:
         - name: frontend
-          image: faroukelrey19008/reservation-frontend:102
+          image: faroukelrey19008/reservation-frontend:105
           imagePullPolicy: Always
           env:
             - name: VITE_API_URL
