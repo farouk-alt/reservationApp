@@ -1,39 +1,8 @@
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: backend-nginx
-#   namespace: reservation-app
-# spec:
-#   selector:
-#     app: backend-nginx
-#   ports:
-#     - name: http
-#       port: 80
-#       targetPort: 80
-#       protocol: TCP
-
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: backend-nginx
-#   namespace: reservation-app
-#   labels:
-#     app: backend-nginx
-# spec:
-#   selector:
-#     app: backend-nginx
-#   ports:
-#     - name: http
-#       port: 80
-#       targetPort: 80
-
 apiVersion: v1
 kind: Service
 metadata:
   name: backend-nginx
   namespace: reservation-app
-  labels:
-    app: backend-nginx
 spec:
   selector:
     app: backend-nginx
@@ -41,4 +10,4 @@ spec:
     - name: http
       port: 80
       targetPort: 80
-
+      protocol: TCP
