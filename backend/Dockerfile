@@ -184,7 +184,6 @@
 
 
 FROM php:8.2-fpm
-FROM php:8.2-fpm
 
 RUN apt-get update && apt-get install -y \
     git curl unzip libpng-dev libonig-dev libxml2-dev \
@@ -194,28 +193,25 @@ WORKDIR /var/www/html
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer \
- | php -- --install-dir=/usr/local/bin --filename=composer
+    | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Copy full Laravel project AFTER installing composer
 COPY . .
 
-# Remove all .env files
 RUN rm -f .env .env.example .env.testing
 
-# Install dependencies (no config cache)
 RUN composer install --no-dev --prefer-dist --optimize-autoloader
 
-# IMPORTANT: remove cached config so K8s env works
 RUN rm -f bootstrap/cache/config.php \
     && rm -f bootstrap/cache/packages.php \
     && rm -f bootstrap/cache/services.php
 
-# Permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage
 
-RUN sed -i 's|listen = 9000|listen = 0.0.0.0:9000|' /usr/local/etc/php-fpm.d/www.conf
+# Force PHP-FPM to listen on 0.0.0.0:9000
+RUN sed -i 's|listen = .*|listen = 0.0.0.0:9000|' /usr/local/etc/php-fpm.d/www.conf
 
 EXPOSE 9000
+
 CMD ["php-fpm"]
 

@@ -10,6 +10,8 @@ spec:
   selector:
     matchLabels:
       app: backend
+      app.kubernetes.io/name: reservation-app
+      managed-by: argocd
   template:
     metadata:
       labels:
@@ -21,8 +23,8 @@ spec:
         - name: regcred
       containers:
         - name: backend
-          image: faroukelrey19008/reservation-backend:101
-          imagePullPolicy: Always  # Change to Always
+          image: faroukelrey19008/reservation-backend:120
+          imagePullPolicy: Always
           ports:
             - containerPort: 9000
               name: fpm
