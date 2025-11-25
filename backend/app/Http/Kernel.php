@@ -24,11 +24,6 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
     ];
-    protected $middleware = [
-    // Laravel default...
-        \App\Http\Middleware\PromMetricsMiddleware::class,
-    ];
-
 
 
 
