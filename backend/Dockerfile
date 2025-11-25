@@ -194,6 +194,7 @@ WORKDIR /var/www/html
 # Install composer
 RUN curl -sS https://getcomposer.org/installer \
     | php -- --install-dir=/usr/local/bin --filename=composer
+    | php -- --install-dir=/usr/local/bin --filename=composer
 
 COPY . .
 
@@ -210,8 +211,10 @@ RUN chown -R www-data:www-data /var/www/html \
 
 # Force PHP-FPM to listen on 0.0.0.0:9000
 RUN sed -i 's|listen = .*|listen = 0.0.0.0:9000|' /usr/local/etc/php-fpm.d/www.conf
+# Force PHP-FPM to listen on 0.0.0.0:9000
+RUN sed -i 's|listen = .*|listen = 0.0.0.0:9000|' /usr/local/etc/php-fpm.d/www.conf
 
 EXPOSE 9000
 
-CMD ["php-fpm"]
 
+CMD ["php-fpm"]
