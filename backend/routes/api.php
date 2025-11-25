@@ -18,9 +18,18 @@ Route::get('/metrics', function (PrometheusService $prometheus) {
         ->header('Content-Type', 'text/plain; version=0.0.4');
 });
 // Public Auth Routes
-Route::post('/admin/login', [AdminAuthController::class, 'login']);
+
+// Add named routes for authentication
+Route::post('/admin/login', [AdminAuthController::class, 'login'])->name('admin.login');
+Route::post('/employe/login', [EmployeAuthController::class, 'login'])->name('employe.login');
+
+// Add a generic login route that redirects to appropriate login
+Route::get('/login', function () {
+    return response()->json(['message' => 'Please use /admin/login or /employe/login'], 401);
+})->name('login');
+// Route::post('/admin/login', [AdminAuthController::class, 'login']);
 Route::post('/employe/register', [EmployeAuthController::class, 'register']);
-Route::post('/employe/login', [EmployeAuthController::class, 'login']);
+// Route::post('/employe/login', [EmployeAuthController::class, 'login']);
 Route::post('/password/forgot', [PasswordResetController::class, 'sendResetLink']);
 Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']);
 

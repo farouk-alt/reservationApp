@@ -208,12 +208,14 @@ RUN rm -f bootstrap/cache/config.php \
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage
 
+# Install APCu using pecl (NOT docker-php-ext-install)
+RUN pecl install apcu && docker-php-ext-enable apcu
+
 # Force PHP-FPM to listen on 0.0.0.0:9000
 RUN sed -i 's|listen = .*|listen = 0.0.0.0:9000|' /usr/local/etc/php-fpm.d/www.conf
-# Force PHP-FPM to listen on 0.0.0.0:9000
-RUN sed -i 's|listen = .*|listen = 0.0.0.0:9000|' /usr/local/etc/php-fpm.d/www.conf
+
+RUN echo "apc.enable_cli=1" >> /usr/local/etc/php/conf.d/docker-php-ext-apcu.ini
 
 EXPOSE 9000
-
 
 CMD ["php-fpm"]

@@ -17,7 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(\App\Http\Middleware\PrometheusMetrics::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        $exceptions->render(function (AuthenticationException $e, $request) {
+    $exceptions->render(function (AuthenticationException $e, $request) {
+        if ($request->is('api/*')) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
-        });
+        }
+        // You can keep the default behavior for web routes if needed
+        return redirect()->guest('login');
+    });
     })->create();

@@ -1,0 +1,53 @@
+{
+  "dashboard": {
+    "title": "Reservation App - Overview",
+    "tags": ["reservation", "laravel"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "title": "HTTP Requests Rate",
+        "targets": [
+          {
+            "expr": "rate(reservation_app_http_requests_total[5m])",
+            "legendFormat": "{{method}} {{path}} - {{status}}"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "title": "HTTP Request Duration (p95)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(reservation_app_http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "{{path}}"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "title": "Database Queries/sec",
+        "targets": [
+          {
+            "expr": "rate(reservation_app_database_queries_total[5m])",
+            "legendFormat": "{{table}} - {{operation}}"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "title": "Reservations Created",
+        "targets": [
+          {
+            "expr": "reservation_app_reservations_total{action=\"created\"}",
+            "legendFormat": "{{status}}"
+          }
+        ],
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 8}
+      }
+    ]
+  }
+}

@@ -8,8 +8,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ReservationCreatedMail;
 use App\Mail\ReservationCanceledMail;
+use App\Services\PrometheusService;
 class ReservationController extends Controller
 {
+
+    private PrometheusService $prometheus;
+
+    public function __construct(PrometheusService $prometheus)
+    {
+        $this->prometheus = $prometheus;
+    }
     // 📋 List all reservations
     public function index()
     {
@@ -99,6 +107,9 @@ public function store(Request $request)
         'duree_minutes' => $validated['duree_minutes'],
         'statut'        => 'confirmée',
     ])->load('employe', 'salle');
+
+    $this->prometheus->incrementReservation('created', 'success');
+
 
     // 📧 Email confirmation
     if ($reservation->employe && $reservation->employe->email) {
@@ -199,6 +210,8 @@ public function cancel($id)
     // Reactivate salle
     \App\Models\Salle::where('id', $reservation->num_salle)
         ->update(['statut' => 'active']);
+    
+    $this->prometheus->incrementReservation('cancelled', 'success');
 
     // 📧 Send cancellation email
     if ($reservation->employe && $reservation->employe->email) {
@@ -298,5 +311,6 @@ public function conflicts(Request $request)
 
     return response()->json($reservations);
 }
+
 
 }
