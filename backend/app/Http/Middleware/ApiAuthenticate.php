@@ -8,20 +8,29 @@ use Illuminate\Http\Request;
 
 class ApiAuthenticate
 {
-    public function handle(Request $request, Closure $next, ...$guards)
+    // public function handle(Request $request, Closure $next, ...$guards)
+    // {
+    //     if (empty($guards)) {
+    //         $guards = [null];
+    //     }
+
+    //     foreach ($guards as $guard) {
+    //         if (auth()->guard($guard)->check()) {
+    //             return $next($request);
+    //         }
+    //     }
+
+    //     throw new AuthenticationException(
+    //         'Unauthenticated.', $guards
+    //     );
+    // }
+    public function handle(Request $request, Closure $next)
     {
-        if (empty($guards)) {
-            $guards = [null];
+        if (!$request->user()) {
+            throw new AuthenticationException('Unauthenticated.');
         }
 
-        foreach ($guards as $guard) {
-            if (auth()->guard($guard)->check()) {
-                return $next($request);
-            }
-        }
-
-        throw new AuthenticationException(
-            'Unauthenticated.', $guards
-        );
+        return $next($request);
     }
+
 }

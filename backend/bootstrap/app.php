@@ -15,7 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // Add Prometheus metrics middleware
         $middleware->append(\App\Http\Middleware\PrometheusMetrics::class);
+        $middleware->alias([
+        'api.auth' => \App\Http\Middleware\ApiAuthenticate::class,
+    ]);
     })
+    
     ->withExceptions(function (Exceptions $exceptions) {
     $exceptions->render(function (AuthenticationException $e, $request) {
         if ($request->is('api/*')) {

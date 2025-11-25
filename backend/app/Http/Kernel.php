@@ -17,6 +17,7 @@ class Kernel extends HttpKernel
         'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
         'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
         'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
+        'api.auth' => \App\Http\Middleware\ApiAuthenticate::class,
     ];
 
     protected $middlewareGroups = [

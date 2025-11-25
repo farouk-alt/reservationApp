@@ -38,7 +38,7 @@ Route::get('/salles', [SalleController::class, 'index']);
 Route::get('/salles/{id}', [SalleController::class, 'show']);
 
 // Protected Routes - Use api.auth instead of auth:sanctum
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('api.auth')->group(function () {
     // Admin
     Route::get('/admin/profile', [AdminAuthController::class, 'profile']);
     Route::put('/admin/profile', [AdminAuthController::class, 'updateProfile']);
