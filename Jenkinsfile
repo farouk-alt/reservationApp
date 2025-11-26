@@ -41,13 +41,26 @@ pipeline {
             steps {
                 dir('backend') {
                     sh '''
-                        # Force array driver to avoid APCu requirement
-                        echo "CACHE_DRIVER=array" > .env.testing.local
-                        echo "SESSION_DRIVER=array" >> .env.testing.local
+                        # Force Laravel to use safe drivers in CI - overwrite .env.testing completely
+                        cat > .env.testing << 'EOF'
+        CACHE_DRIVER=array
+        SESSION_DRIVER=array
+        DB_CONNECTION=sqlite
+        DB_DATABASE=:memory:
+        EOF
 
+                        # Verify the file was created
+                        echo "=== Content of .env.testing ==="
+                        cat .env.testing
+
+                        # Run migrate and tests with explicit environment
                         php artisan migrate --env=testing --force --no-interaction
+
+                        # Run PHPUnit with coverage
                         vendor/bin/phpunit --coverage-clover coverage.xml || true
-                        ls -l coverage.xml || true
+
+                        # Show coverage file
+                        ls -l coverage.xml || echo "No coverage.xml generated"
                     '''
                 }
             }
