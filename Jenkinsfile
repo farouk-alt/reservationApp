@@ -328,7 +328,7 @@ pipeline {
                 )]) {
                     sh '''
                         BUILD_NUM="${BUILD_NUMBER}"
-                        BUILD_URL_ESC=$(printf '%s' "${BUILD_URL}" | jq -Rr @uri)
+                        BUILD_URL="${BUILD_URL}"
 
                         # Create Change Request
                         curl -s -X POST "https://dev190642.service-now.com/api/now/table/change_request" \
@@ -336,14 +336,12 @@ pipeline {
                             -H "Content-Type: application/json" \
                             -d '{
                             "short_description": "Deploy Reservation App v'"$BUILD_NUM"'",
-                            "description": "Application: Reservation Management System\\nVersion: '"$BUILD_NUM"'\\nEnvironment: Production\\nBranch: main\\nDeployed by: Jenkins Pipeline\\nChanges: Updated containers to version '"$BUILD_NUM"'",
+                            "description": "Application: Reservation Management System\\nVersion: '"$BUILD_NUM"'\\nEnvironment: Production\\nBranch: main\\nDeployed by: Jenkins Pipeline\\nJenkins Build: '"$BUILD_URL"'\\nChanges: Updated containers to version '"$BUILD_NUM"'",
                             "priority": "3",
                             "risk": "Low",
                             "impact": "Low",
-                            "type": "Standard",
-                            "assignment_group": "DevOps Team",
-                            "category": "Software Deployment"
-                            }' -w "\\nCHG HTTP: %{http_code}\\n" || echo "Change Request failed (ignored)"
+                            "type": "Standard"
+                            }' || echo "Change Request failed (ignored)"
 
                         # Create Incident
                         curl -s -X POST "https://dev190642.service-now.com/api/now/table/incident" \
@@ -351,13 +349,12 @@ pipeline {
                             -H "Content-Type: application/json" \
                             -d '{
                             "short_description": "[DEPLOYMENT] Reservation App v'"$BUILD_NUM"'",
-                            "description": "Deployment Tracking - Reservation Management System\\n• Version: '"$BUILD_NUM"'\\n• Environment: Production\\n• Status: Success\\n• Jenkins Build: '"${BUILD_URL}"'\\n• ArgoCD Sync: Completed\\n• Images: faroukelrey19008/reservation-{backend,frontend}:'"$BUILD_NUM"'",
+                            "description": "Deployment SUCCESS\\n• Version: '"$BUILD_NUM"'\\n• Build URL: '"$BUILD_URL"'\\n• ArgoCD Sync: Completed\\n• Images: faroukelrey19008/reservation-{backend,frontend}:'"$BUILD_NUM"'",
                             "priority": "4",
                             "impact": "3",
                             "urgency": "3",
-                            "category": "DevOps",
-                            "contact_type": "CI/CD Pipeline"
-                            }' -w "\\nINC HTTP: %{http_code}\\n" || echo "Incident creation failed (ignored)"
+                            "category": "DevOps"
+                            }' || echo "Incident creation failed (ignored)"
 
                         echo "ServiceNow integration completed"
                     '''
