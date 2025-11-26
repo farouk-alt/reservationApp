@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-complete-current-schema
+      author: farouk
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: migrations/000-current-schema.sql
+            splitStatements: true
+            stripComments: true
+            endDelimiter: ;

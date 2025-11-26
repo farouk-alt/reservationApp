@@ -238,7 +238,25 @@ pipeline {
                 """
             }
         }
-
+        // stage('Database Migration - Liquibase') {
+        //     when { branch 'main' }
+        //     steps {
+        //         dir('backend') {
+        //             withCredentials([string(credentialsId: 'mysql-root-password', variable: 'MYSQL_PASS')]) {
+        //                 sh """
+        //                     echo "Running Liquibase migration..."
+        //                     liquibase \
+        //                         --url=jdbc:mysql://host.docker.internal:3307/reservation_db \
+        //                         --username=root \
+        //                         --password=${MYSQL_PASS} \
+        //                         --changeLogFile=database/changelog/db.changelog-master.yaml \
+        //                         --driver=com.mysql.cj.jdbc.Driver \
+        //                         update
+        //                 """
+        //             }
+        //         }
+        //     }
+        // }
         stage('Push Docker Images') {
             when {
                 expression { env.BRANCH_CLEAN == 'main' }

@@ -1,0 +1,26 @@
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: reservation-app
+# spec:
+#   replicas: 1
+#   template:
+#     spec:
+#       containers:
+#         - name: backend
+#           image: faroukelrey19008/reservation-backend:195
+#         - name: frontend
+#           image: faroukelrey19008/reservation-frontend:195
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: reservation-app
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: backend
+          image: faroukelrey19008/reservation-backend:195
+        - name: frontend
+          image: faroukelrey19008/reservation-frontend:195

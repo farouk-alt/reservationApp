@@ -1,0 +1,39 @@
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: reservation-app
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: reservation-app
+#   template:
+#     metadata:
+#       labels:
+#         app: reservation-app
+#     spec:
+#       containers: []   # ← EMPTY! Let overlays fill it
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: reservation-app
+spec:
+  replicas: 2
+  strategy:
+    canary:
+      steps:
+      - setWeight: 20   # 20% traffic
+      - pause: {duration: 60}   # wait 1 min
+      - setWeight: 50
+      - pause: {duration: 120}
+      - setWeight: 100
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: reservation-app
+  template:
+    metadata:
+      labels:
+        app: reservation-app
+    spec:
+      containers: []   # will be filled by overlay patches
