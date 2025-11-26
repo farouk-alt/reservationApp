@@ -391,10 +391,6 @@ pipeline {
         }
     }
 
-
-
-    }
-
     post {
         success { 
             echo "✅ Build OK - Quality Gate: ${env.QG_STATUS}"
