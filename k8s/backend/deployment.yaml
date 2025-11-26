@@ -23,7 +23,7 @@ spec:
         - name: regcred
       initContainers:
         - name: liquibase-migration
-          image: faroukelrey19008/reservation-backend:${BUILD_NUMBER}  # ← use Jenkins tag!
+          image: faroukelrey19008/reservation-backend:195  # ← use Jenkins tag!
           workingDir: /var/www/html
           command:
             - liquibase
@@ -34,7 +34,7 @@ spec:
             - update
       containers:
         - name: backend
-          image: faroukelrey19008/reservation-backend:${BUILD_NUMBER}
+          image: faroukelrey19008/reservation-backend:195
           imagePullPolicy: Always
           ports:
             - containerPort: 9000
