@@ -263,9 +263,57 @@ pipeline {
         stage('Update Kustomize Overlay') {
             steps {
                 script {
+                    def env = params.DEPLOY_ENV
                     sh """
-                        sed -i 's|image: farouk/reservation-app.*|image: farouk/reservation-app:${IMAGE_TAG}|g' k8s/overlays/${DEPLOY_ENV}/patch-deployment.yaml
+                        sed -i 's|image: faroukelrey19008/reservation-backend:.*|image: faroukelrey19008/reservation-backend:${BUILD_NUMBER}|' k8s/overlays/${env}/patch-deployment.yaml
+                        sed -i 's|image: faroukelrey19008/reservation-frontend:.*|image: faroukelrey19008/reservation-frontend:${BUILD_NUMBER}|' k8s/overlays/${env}/patch-deployment.yaml
+                        git add k8s/overlays/${env}/
+                        git commit -m "Deploy v${BUILD_NUMBER} to ${env} [ci skip]" || echo "Nothing to commit"
                     """
+                }
+                withCredentials([usernamePassword(credentialsId: 'jenkins-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    sh """
+                        git config user.email "jenkins@ci.com"
+                        git config user.name "Jenkins CI"
+                        git remote set-url origin https://${GIT_USER}:${GIT_PASS}@github.com/farouk-alt/reservationApp.git
+                        git push origin HEAD:main
+                    """
+                }
+            }
+        }
+
+        stage('Trigger ArgoCD Sync') {
+            when {
+                expression { env.BRANCH_CLEAN == 'main' }
+            }
+            steps {
+                withCredentials([string(credentialsId: 'argocd-token', variable: 'ARGOCD_TOKEN')]) {
+                    script {
+                        def env = params.DEPLOY_ENV
+                        def timestamp = sh(script: 'date -u +"%Y-%m-%dT%H:%M:%SZ"', returnStdout: true).trim()
+
+                        sh """
+                            kubectl patch app reservation-app-${env} -n argocd --type merge -p '{
+                                "metadata": {
+                                    "annotations": {
+                                        "servicenow-deployment-id": "${BUILD_NUMBER}",
+                                        "servicenow-deployment-time": "${timestamp}",
+                                        "deployed-by": "Jenkins"
+                                    }
+                                }
+                            }' || true
+
+                            argocd app sync reservation-app-${env} \
+                                --server host.docker.internal:32050 \
+                                --auth-token ${ARGOCD_TOKEN} \
+                                --insecure --grpc-web --force --prune
+
+                            argocd app wait reservation-app-${env} \
+                                --server host.docker.internal:32050 \
+                                --auth-token ${ARGOCD_TOKEN} \
+                                --insecure --grpc-web --timeout 300
+                        """
+                    }
                 }
             }
         }
@@ -296,40 +344,6 @@ pipeline {
         //         }
         //     }
         // }
-        stage('Trigger ArgoCD Sync') {
-            when {
-                expression { env.BRANCH_CLEAN == 'main' }
-            }
-            steps {
-                withCredentials([string(credentialsId: 'argocd-token', variable: 'ARGOCD_TOKEN')]) {
-                    script {
-                        def timestamp = sh(script: 'date -u +"%Y-%m-%dT%H:%M:%SZ"', returnStdout: true).trim()
-
-                        sh """
-                            kubectl patch app reservation-app -n argocd --type merge -p '{
-                                "metadata": {
-                                    "annotations": {
-                                        "servicenow-deployment-id": "${BUILD_NUMBER}",
-                                        "servicenow-deployment-time": "${timestamp}"
-                                    }
-                                }
-                            }' || true
-
-                            argocd app sync reservation-app \
-                                --server host.docker.internal:32050 \
-                                --auth-token ${ARGOCD_TOKEN} \
-                                --insecure --grpc-web --force --prune || true
-
-                            argocd app wait reservation-app \
-                                --server host.docker.internal:32050 \
-                                --auth-token ${ARGOCD_TOKEN} \
-                                --insecure --grpc-web --timeout 300 || true
-                            argocd app sync reservation-app-${DEPLOY_ENV}
-                        """
-                    }
-                }
-            }
-        }
         stage('ServiceNow Integration') {
             when {
                 expression { env.BRANCH_CLEAN == 'main' }
@@ -363,8 +377,7 @@ pipeline {
                             -H "Content-Type: application/json" \
                             -d '{
                             "short_description": "[DEPLOYMENT] Reservation App v'"$BUILD_NUM"'",
-                            "description": "Deployment SUCCESS\\n• Version: '"$BUILD_NUM"'\\n• Build URL: '"$BUILD_URL"'\\n• ArgoCD Sync: Completed\\n• Images: faroukelrey19008/reservation-{backend,frontend}:'"$BUILD_NUM"'",
-                            "priority": "4",
+                            "description": "Deployment SUCCESS\\n• Version: '${BUILD_NUMBER}'\\n• Environment: ${params.DEPLOY_ENV}\\n• Build URL: '${BUILD_URL}'\\n• ArgoCD Sync: Completed"                            "priority": "4",
                             "impact": "3",
                             "urgency": "3",
                             "category": "DevOps"
