@@ -7,5 +7,7 @@ spec:
   template:
     spec:
       containers:
-        - name: reservation-app
-          image: farouk/reservation-app:dev
+        - name: backend
+          image: faroukelrey19008/reservation-backend:195
+        - name: frontend
+          image: faroukelrey19008/reservation-frontend:195
