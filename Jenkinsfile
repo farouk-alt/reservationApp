@@ -278,7 +278,7 @@ pipeline {
                     kubectl patch app reservation-app -n argocd --type merge -p '{
                         "metadata": {
                             "annotations": {
-                                "servicenow-deployment-id": "${env.BUILD_NUMBER}",
+                                "servicenow-deployment-id": "${BUILD_NUMBER}",
                                 "servicenow-deployment-time": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
                             }
                         }
@@ -319,14 +319,14 @@ pipeline {
                     )]) {
                         // 1. Create Change Request for deployment
                         def changeRequest = [
-                            "short_description": "Deploy Reservation App v${env.BUILD_NUMBER}",
+                            "short_description": "Deploy Reservation App v${BUILD_NUMBER}",
                             "description": """
         Application: Reservation Management System
-        Version: ${env.BUILD_NUMBER}
+        Version: ${BUILD_NUMBER}
         Environment: Production
-        Branch: ${env.BRANCH_CLEAN}
+        Branch: ${BRANCH_CLEAN}
         Deployed by: Jenkins Pipeline
-        Changes: Updated backend and frontend containers to version ${env.BUILD_NUMBER}
+        Changes: Updated backend and frontend containers to version ${BUILD_NUMBER}
                             """,
                             "priority": "3",
                             "risk": "Low",
@@ -352,15 +352,15 @@ pipeline {
 
                         // 2. Create Incident for deployment tracking
                         def incident = [
-                            "short_description": "[DEPLOYMENT] Reservation App v${env.BUILD_NUMBER}",
+                            "short_description": "[DEPLOYMENT] Reservation App v${BUILD_NUMBER}",
                             "description": """
         Deployment Tracking - Reservation Management System
-        • Version: ${env.BUILD_NUMBER}
+        • Version: ${BUILD_NUMBER}
         • Environment: Production  
         • Status: Success
-        • Jenkins Build: ${env.BUILD_URL}
+        • Jenkins Build: ${BUILD_URL}
         • ArgoCD Sync: Completed
-        • Images: faroukelrey19008/reservation-{backend,frontend}:${env.BUILD_NUMBER}
+        • Images: faroukelrey19008/reservation-{backend,frontend}:${BUILD_NUMBER}
                             """,
                             "priority": "4",
                             "impact": "3",
