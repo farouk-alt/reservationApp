@@ -40,15 +40,18 @@ pipeline {
         stage('Backend - Tests + Coverage') {
             steps {
                 dir('backend') {
-                    sh """
-                        php artisan migrate --env=testing --force
+                    sh '''
+                        # Force array driver to avoid APCu requirement
+                        echo "CACHE_DRIVER=array" > .env.testing.local
+                        echo "SESSION_DRIVER=array" >> .env.testing.local
+
+                        php artisan migrate --env=testing --force --no-interaction
                         vendor/bin/phpunit --coverage-clover coverage.xml || true
                         ls -l coverage.xml || true
-                    """
+                    '''
                 }
             }
         }
-
         stage('Frontend - Install + Coverage') {
             steps {
                 dir('frontend') {
