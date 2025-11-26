@@ -28,7 +28,7 @@ spec:
           imagePullPolicy: Always
       initContainers:
         - name: liquibase-migration
-          image: faroukelrey19008/reservation-backend:VICTORY2025
+          image: faroukelrey19008/reservation-backend:195
           workingDir: /var/www/html
           command:
             - liquibase
