@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: reservation-app
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: reservation-app
@@ -12,8 +12,4 @@ spec:
       labels:
         app: reservation-app
     spec:
-      containers:
-        - name: reservation-app
-          image: farouk/reservation-app:latest
-          ports:
-            - containerPort: 9000
+      containers: []   # ← EMPTY! Let overlays fill it
