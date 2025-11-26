@@ -36,6 +36,6 @@ try {
     Write-Host "ServiceNow API Test FAILED: $($_.Exception.Message)" -ForegroundColor Red
 }
 
-Write-Host "`n==========================================" -ForegroundColor Cyan
+Write-Host "`n=======================================" -ForegroundColor Cyan
 Write-Host "TEST COMPLETE!" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Cyan
