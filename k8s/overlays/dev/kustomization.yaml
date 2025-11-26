@@ -1,0 +1,7 @@
+namespace: reservation-app-dev
+
+resources:
+  - ../../base
+
+patchesStrategicMerge:
+  - patch-deployment.yaml

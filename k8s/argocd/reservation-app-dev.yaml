@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: reservation-app-dev
+  namespace: argocd
+spec:
+  project: default
+  destination:
+    name: in-cluster
+    namespace: reservation-app-dev
+  source:
+    repoURL: https://github.com/farouk-alt/reservation-app.git
+    targetRevision: main
+    path: k8s/overlays/dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,7 @@
+namespace: reservation-app-staging
+
+resources:
+  - ../../base
+
+patchesStrategicMerge:
+  - patch-deployment.yaml
