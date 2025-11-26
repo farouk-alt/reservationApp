@@ -9,9 +9,5 @@ resources:
 patches:
   - path: patch-rollout.yaml
     target:
-      kind: Deployment
-      name: backend
-  - path: patch-rollout.yaml
-    target:
-      kind: Deployment
-      name: frontend
+      kind: Rollout          # ← FIXED: Rollout, not Deployment
+      name: reservation-app  # ← FIXED: correct name
