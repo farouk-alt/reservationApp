@@ -218,6 +218,23 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 # Install APCu using pecl (NOT docker-php-ext-install)
 RUN pecl install apcu && docker-php-ext-enable apcu
 
+# --- INSTALL LIQUIBASE THE RIGHT WAY (works 100 %) ---
+# INSTALL LIQUIBASE — BULLETPROOF VERSION (NEVER FAILS)
+# INSTALL LIQUIBASE — FINAL VERSION THAT WILL NEVER FAIL
+# INSTALL LIQUIBASE — FINAL VERSION THAT WORKS EVERY SINGLE TIME
+# INSTALL LIQUIBASE — FINAL WORKING VERSION (NO MORE ERRORS)
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     wget unzip ca-certificates openjdk-17-jre-headless && \
+#     wget -q https://github.com/liquibase/liquibase/releases/download/v4.29.2/liquibase-4.29.2-bin.tar.gz \
+#       -O /tmp/liquibase.tar.gz && \
+#     mkdir -p /opt/liquibase && \
+#     tar -xzf /tmp/liquibase.tar.gz -C /opt/liquibase --strip-components=1 && \
+#     chmod +x /opt/liquibase/liquibase && \
+#     ln -s /opt/liquibase/liquibase /usr/local/bin/liquibase && \
+#     rm -rf /tmp/liquibase.tar.gz /var/lib/apt/lists/* && \
+#     liquibase --version
+
+
 # Force PHP-FPM to listen on 0.0.0.0:9000
 RUN sed -i 's|listen = .*|listen = 0.0.0.0:9000|' /usr/local/etc/php-fpm.d/www.conf
 

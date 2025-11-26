@@ -6,7 +6,6 @@ namespace: reservation-app-dev
 resources:
   - ../../base
 
-# This is the correct way to patch an Argo Rollout (not Deployment!)
 patches:
   - path: patch-rollout.yaml
     target:

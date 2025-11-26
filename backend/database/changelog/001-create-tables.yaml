@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001
+      author: farouk
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: name
+                  type: varchar(255)

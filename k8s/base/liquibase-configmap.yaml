@@ -1,0 +1,13 @@
+# File: k8s/base/liquibase-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: liquibase-changelog
+data:
+  db.changelog-master.yaml: |
+    databaseChangeLog:
+      - include:
+          file: database/changelog/001-create-tables.yaml
+      - include:
+          file: database/changelog/002-seed-data.yaml
+      # ... all your existing changesets

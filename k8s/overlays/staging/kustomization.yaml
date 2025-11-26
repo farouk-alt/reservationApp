@@ -9,5 +9,5 @@ resources:
 patches:
   - path: patch-rollout.yaml
     target:
-      kind: Rollout          # ← FIXED: Rollout, not Deployment
-      name: reservation-app  # ← FIXED: correct name
+      kind: Rollout
+      name: reservation-app

@@ -257,6 +257,32 @@ pipeline {
         //         }
         //     }
         // }
+        stage('Run Liquibase Migration') {
+            when { expression { env.BRANCH_CLEAN == 'main' } }
+            steps {
+                script {
+                    def ns = "reservation-app-${params.DEPLOY_ENV}"
+
+                    sh """
+                        # Make sure namespace exists (ArgoCD will also create it)
+                        kubectl create namespace ${ns} --dry-run=client -o yaml | kubectl apply -f -
+
+                        # Apply Liquibase resources only
+                        kubectl -n ${ns} apply -f k8s/base/liquibase-changelog-configmap.yaml
+                        kubectl -n ${ns} apply -f k8s/base/mysql-driver-configmap.yaml
+
+                        # Re-create the job each time
+                        kubectl -n ${ns} delete job liquibase-migration --ignore-not-found=true
+                        kubectl -n ${ns} apply -f k8s/base/liquibase-job.yaml
+
+                        # Wait for migration to finish
+                        kubectl -n ${ns} wait --for=condition=complete job/liquibase-migration --timeout=300s
+                    """
+                }
+            }
+        }
+
+
         stage('Push Docker Images') {
             when {
                 expression { env.BRANCH_CLEAN == 'main' }
@@ -282,12 +308,14 @@ pipeline {
             steps {
                 script {
                     def env = params.DEPLOY_ENV
-                    sh """
-                        sed -i 's|image: faroukelrey19008/reservation-backend:.*|image: faroukelrey19008/reservation-backend:${BUILD_NUMBER}|' k8s/overlays/${env}/patch-deployment.yaml
-                        sed -i 's|image: faroukelrey19008/reservation-frontend:.*|image: faroukelrey19008/reservation-frontend:${BUILD_NUMBER}|' k8s/overlays/${env}/patch-deployment.yaml
+                        sh """
+                        sed -i 's|image: faroukelrey19008/reservation-backend:.*|image: faroukelrey19008/reservation-backend:${BUILD_NUMBER}|' k8s/overlays/${env}/patch-rollout.yaml
+                        sed -i 's|image: faroukelrey19008/reservation-frontend:.*|image: faroukelrey19008/reservation-frontend:${BUILD_NUMBER}|' k8s/overlays/${env}/patch-rollout.yaml
+
                         git add k8s/overlays/${env}/
                         git commit -m "Deploy v${BUILD_NUMBER} to ${env} [ci skip]" || echo "Nothing to commit"
-                    """
+                        """
+
                 }
                 withCredentials([usernamePassword(credentialsId: 'jenkins-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                     sh """

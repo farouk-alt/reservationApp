@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: liquibase-migration
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: liquibase
+          image: liquibase/liquibase:4.29.2
+          command: ["liquibase"]
+          args:
+            - --url=jdbc:mysql://mysql.reservation-app.svc.cluster.local:3306/reservation_db
+            - --username=root
+            - --password=1010
+            - --changeLogFile=/liquibase/db.changelog-master.yaml
+            - update
+          volumeMounts:
+            - name: changelogs
+              mountPath: /liquibase
+      volumes:
+        - name: changelogs
+          configMap:
+            name: liquibase-changelog

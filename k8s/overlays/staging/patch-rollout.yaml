@@ -12,28 +12,21 @@
 #         - name: frontend
 #           image: faroukelrey19008/reservation-frontend:195
 apiVersion: argoproj.io/v1alpha1
-kind: Rollout
+kind: Application
 metadata:
-  name: reservation-app
+  name: reservation-app-dev
 spec:
-  replicas: 1
-  template:
-    spec:
-      containers:
-        - name: backend
-          image: faroukelrey19008/reservation-backend:195
-          imagePullPolicy: Always
-        - name: frontend
-          image: faroukelrey19008/reservation-frontend:195
-          imagePullPolicy: Always
-      initContainers:
-        - name: liquibase-migration
-          image: faroukelrey19008/reservation-backend:195
-          workingDir: /var/www/html
-          command:
-            - liquibase
-            - --url=jdbc:mysql://mysql.reservation-app.svc.cluster.local:3306/reservation_db
-            - --username=root
-            - --password=1010
-            - --changeLogFile=/var/www/html/database/changelog/db.changelog-master.yaml
-            - update
+  destination:
+    namespace: reservation-app-dev
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://github.com/farouk-alt/reservationApp
+    targetRevision: main
+    path: k8s/overlays/dev     # 👈 correct
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
