@@ -22,5 +22,18 @@ spec:
       containers:
         - name: backend
           image: faroukelrey19008/reservation-backend:195
+          imagePullPolicy: Always
         - name: frontend
           image: faroukelrey19008/reservation-frontend:195
+          imagePullPolicy: Always
+      initContainers:
+        - name: liquibase-migration
+          image: faroukelrey19008/reservation-backend:VICTORY2025
+          workingDir: /var/www/html
+          command:
+            - liquibase
+            - --url=jdbc:mysql://mysql.reservation-app.svc.cluster.local:3306/reservation_db
+            - --username=root
+            - --password=1010
+            - --changeLogFile=/var/www/html/database/changelog/db.changelog-master.yaml
+            - update

@@ -1,7 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
 namespace: reservation-app-dev
 
 resources:
   - ../../base
 
-patchesStrategicMerge:
-  - patch-rollout.yaml
+# This is the correct way to patch an Argo Rollout (not Deployment!)
+patches:
+  - path: patch-rollout.yaml
+    target:
+      kind: Rollout
+      name: reservation-app
