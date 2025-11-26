@@ -1,4 +1,5 @@
 pipeline {
+
     agent any
 
     environment {
@@ -14,11 +15,12 @@ pipeline {
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         ARGOCD_SERVER = "host.docker.internal:32050"
 
-        // ✅ CORRECTION: ServiceNow configuration
-        SERVICENOW_INSTANCE = 'dev190642.service-now.com'
+        SERVICENOW_INSTANCE = 'your-instance'
+        SERVICENOW_CREDENTIALS = credentials('servicenow-credentials')
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -238,9 +240,9 @@ pipeline {
                 }
             }
         }
-
         stage('Update K8s Manifests') {
             steps {
+
                 sh """
                     # Update backend image
                     sed -i 's|image: faroukelrey19008/reservation-backend:.*|image: faroukelrey19008/reservation-backend:${BUILD_NUMBER}|' k8s/backend/deployment.yaml
@@ -252,6 +254,7 @@ pipeline {
                     git commit -m "Deploy build #${BUILD_NUMBER}" || true
                 """
 
+                // 🔥 AUTHENTICATED GIT PUSH
                 withCredentials([usernamePassword(credentialsId: 'jenkins-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                     sh """
                         git config user.email "jenkins@ci.com"
@@ -271,20 +274,18 @@ pipeline {
             }
             steps {
                 withCredentials([string(credentialsId: 'argocd-token', variable: 'ARGOCD_TOKEN')]) {
-                    // ✅ CORRECTION: Fixed the JSON syntax
-                    sh """
+                    sh '''
                         kubectl patch app reservation-app -n argocd --type merge -p '{
                             "metadata": {
                                 "annotations": {
-                                    "servicenow-deployment-id": "${env.BUILD_NUMBER}",
-                                    "servicenow-deployment-time": "'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"
+                                    "servicenow-deployment-id": "%BUILD_NUMBER%",
+                                    "servicenow-deployment-time": "%TIMESTAMP%"
                                 }
                             }
                         }' || true
-                    """
-                    
-                    sh '''
+
                         ARGOCD_SERVER=host.docker.internal:32050
+                        TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
                         echo "Triggering ArgoCD sync..."
 
@@ -304,15 +305,12 @@ pipeline {
                             --insecure \
                             --grpc-web \
                             --timeout 300 || true
-                    '''
+                    '''.replace('%BUILD_NUMBER%', BUILD_NUMBER)
+                    .replace('%TIMESTAMP%', sh(script: 'date -u +"%Y-%m-%dT%H:%M:%SZ"', returnStdout: true).trim())
                 }
             }
         }
-
         stage('ServiceNow Integration') {
-            when {
-                expression { env.BRANCH_CLEAN == 'main' }
-            }
             steps {
                 script {
                     withCredentials([usernamePassword(
@@ -320,77 +318,94 @@ pipeline {
                         usernameVariable: 'SERVICENOW_USER',
                         passwordVariable: 'SERVICENOW_PASS'
                     )]) {
-                        // Create Change Request
-                        echo "Creating ServiceNow Change Request..."
+                        // 1. Create Change Request for deployment
+                        def changeRequest = [
+                            "short_description": "Deploy Reservation App v${BUILD_NUMBER}",
+                            "description": """
+        Application: Reservation Management System
+        Version: ${BUILD_NUMBER}
+        Environment: Production
+        Branch: ${BRANCH_CLEAN}
+        Deployed by: Jenkins Pipeline
+        Changes: Updated backend and frontend containers to version ${BUILD_NUMBER}
+                            """,
+                            "priority": "3",
+                            "risk": "Low",
+                            "impact": "Low",
+                            "type": "Standard",
+                            "assignment_group": "DevOps Team",
+                            "category": "Software Deployment"
+                        ]
+
+                        def changeJson = new groovy.json.JsonOutput().toJson(changeRequest)
+                        
                         sh """
+                            echo "Creating ServiceNow Change Request..."
                             curl -X POST \
-                                "https://${env.SERVICENOW_INSTANCE}/api/now/table/change_request" \
-                                -u "${SERVICENOW_USER}:${SERVICENOW_PASS}" \
-                                -H "Content-Type: application/json" \
-                                -H "Accept: application/json" \
-                                -d '{
-                                    "short_description": "Deploy Reservation App v${env.BUILD_NUMBER}",
-                                    "description": "Application: Reservation Management System\\\\nVersion: ${env.BUILD_NUMBER}\\\\nEnvironment: Production\\\\nBranch: ${env.BRANCH_CLEAN}\\\\nDeployed by: Jenkins Pipeline\\\\nChanges: Updated backend and frontend containers to version ${env.BUILD_NUMBER}",
-                                    "priority": "3",
-                                    "risk": "Low",
-                                    "impact": "Low",
-                                    "type": "Standard",
-                                    "assignment_group": "DevOps Team",
-                                    "category": "Software Deployment"
-                                }' \
-                                --silent \
-                                --write-out "Change Request HTTP Status: %{http_code}" \
-                                --output /tmp/servicenow-change-response.txt
+                                https://dev190642.service-now.com/api/now/table/change_request \
+                                -u '${SERVICENOW_USER}:${SERVICENOW_PASS}' \
+                                -H 'Content-Type: application/json' \
+                                -H 'Accept: application/json' \
+                                -d '${changeJson}' \
+                                -w " HTTP Status: %{http_code}" \
+                                -s
                         """
 
-                        // Create Incident for tracking
-                        echo "Creating ServiceNow Incident for deployment tracking..."
+                        // 2. Create Incident for deployment tracking
+                        def incident = [
+                            "short_description": "[DEPLOYMENT] Reservation App v${BUILD_NUMBER}",
+                            "description": """
+        Deployment Tracking - Reservation Management System
+        • Version: ${BUILD_NUMBER}
+        • Environment: Production  
+        • Status: Success
+        • Jenkins Build: ${BUILD_URL}
+        • ArgoCD Sync: Completed
+        • Images: faroukelrey19008/reservation-{backend,frontend}:${BUILD_NUMBER}
+                            """,
+                            "priority": "4",
+                            "impact": "3",
+                            "urgency": "3",
+                            "category": "DevOps",
+                            "contact_type": "CI/CD Pipeline"
+                        ]
+
+                        def incidentJson = new groovy.json.JsonOutput().toJson(incident)
+                        
                         sh """
+                            echo "Creating ServiceNow Incident for tracking..."
                             curl -X POST \
-                                "https://${env.SERVICENOW_INSTANCE}/api/now/table/incident" \
-                                -u "${SERVICENOW_USER}:${SERVICENOW_PASS}" \
-                                -H "Content-Type: application/json" \
-                                -H "Accept: application/json" \
-                                -d '{
-                                    "short_description": "[DEPLOYMENT] Reservation App v${env.BUILD_NUMBER}",
-                                    "description": "Deployment Tracking - Reservation Management System\\\\n• Version: ${env.BUILD_NUMBER}\\\\n• Environment: Production\\\\n• Status: Success\\\\n• Jenkins Build: ${env.BUILD_URL}\\\\n• ArgoCD Sync: Completed\\\\n• Images: faroukelrey19008/reservation-{backend,frontend}:${env.BUILD_NUMBER}",
-                                    "priority": "4",
-                                    "impact": "3",
-                                    "urgency": "3",
-                                    "category": "DevOps",
-                                    "contact_type": "CI/CD Pipeline"
-                                }' \
-                                --silent \
-                                --write-out "Incident HTTP Status: %{http_code}" \
-                                --output /tmp/servicenow-incident-response.txt
+                                https://dev190642.service-now.com/api/now/table/incident \
+                                -u '${SERVICENOW_USER}:${SERVICENOW_PASS}' \
+                                -H 'Content-Type: application/json' \
+                                -H 'Accept: application/json' \
+                                -d '${incidentJson}' \
+                                -w " HTTP Status: %{http_code}" \
+                                -s
                         """
 
-                        // Display responses
-                        sh """
-                            echo "=== ServiceNow Change Request Response ==="
-                            cat /tmp/servicenow-change-response.txt || echo "No response file"
-                            echo ""
-                            echo "=== ServiceNow Incident Response ==="
-                            cat /tmp/servicenow-incident-response.txt || echo "No response file"
-                        """
-
-                        echo "ServiceNow integration completed for build ${env.BUILD_NUMBER}"
+                        echo "✅ ServiceNow integration completed"
                     }
                 }
             }
         }
     }
 
+
+
+    }
+
     post {
         success { 
-            echo "Build OK - Quality Gate: ${env.QG_STATUS}"
-            echo "Deployed version: ${IMAGE_TAG}"
+            echo "✅ Build OK - Quality Gate: ${env.QG_STATUS}"
+            echo "✅ Deployed version: ${IMAGE_TAG}"
         }
         failure { 
-            echo "Build Failed"
+            echo "❌ Build Failed"
         }
         always {
             echo "Pipeline completed. Check reports in workspace/reports/"
+            // Cleanup old docker images
             sh "docker system prune -f || true"
         }
     }
