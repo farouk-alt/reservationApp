@@ -270,7 +270,7 @@ pipeline {
                     git commit -m "Deploy build #${BUILD_NUMBER}" || true
                 """
 
-                // 🔥 AUTHENTICATED GIT PUSH
+                // 🔥 AUTHENTICATED G
                 withCredentials([usernamePassword(credentialsId: 'jenkins-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                     sh """
                         git config user.email "jenkins@ci.com"
