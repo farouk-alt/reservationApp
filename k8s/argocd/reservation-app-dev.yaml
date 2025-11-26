@@ -9,7 +9,7 @@ spec:
     name: in-cluster
     namespace: reservation-app-dev
   source:
-    repoURL: https://github.com/farouk-alt/reservation-app.git
+    repoURL: https://github.com/farouk-alt/reservationApp
     targetRevision: main
     path: k8s/overlays/dev
   syncPolicy:
