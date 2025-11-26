@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: test-alert
+  namespace: monitoring
+spec:
+  groups:
+    - name: demo
+      rules:
+        - alert: DiscordTestAlert
+          expr: vector(1)
+          for: 1s
+          labels:
+            severity: critical
+          annotations:
+            description: "This is a manual test alert sent to Discord."

@@ -1,0 +1,325 @@
+# k8s/servicenow/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: servicenow-integration
+
+---
+# k8s/servicenow/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: servicenow-credentials
+  namespace: servicenow-integration
+type: Opaque
+stringData:
+  # Replace these with your actual ServiceNow credentials
+  SERVICENOW_INSTANCE: "YOUR-INSTANCE.service-now.com"  # e.g., dev12345.service-now.com
+  SERVICENOW_USERNAME: "prometheus_integration"
+  SERVICENOW_PASSWORD: "YOUR_PASSWORD_HERE"
+  SERVICENOW_ASSIGNMENT_GROUP: "DevOps Team"
+
+---
+# k8s/servicenow/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: servicenow-config
+  namespace: servicenow-integration
+data:
+  PORT: "3000"
+
+---
+# k8s/servicenow/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: servicenow-webhook
+  namespace: servicenow-integration
+  labels:
+    app: servicenow-webhook
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: servicenow-webhook
+  template:
+    metadata:
+      labels:
+        app: servicenow-webhook
+    spec:
+      containers:
+      - name: webhook
+        image: node:18-alpine
+        command: ["node", "/app/servicenow-webhook.js"]
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: servicenow-config
+              key: PORT
+        - name: SERVICENOW_INSTANCE
+          valueFrom:
+            secretKeyRef:
+              name: servicenow-credentials
+              key: SERVICENOW_INSTANCE
+        - name: SERVICENOW_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: servicenow-credentials
+              key: SERVICENOW_USERNAME
+        - name: SERVICENOW_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: servicenow-credentials
+              key: SERVICENOW_PASSWORD
+        - name: SERVICENOW_ASSIGNMENT_GROUP
+          valueFrom:
+            secretKeyRef:
+              name: servicenow-credentials
+              key: SERVICENOW_ASSIGNMENT_GROUP
+        volumeMounts:
+        - name: app-code
+          mountPath: /app
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      volumes:
+      - name: app-code
+        configMap:
+          name: servicenow-app-code
+      initContainers:
+      - name: install-dependencies
+        image: node:18-alpine
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            cd /app
+            npm init -y
+            npm install express axios
+        volumeMounts:
+        - name: app-code
+          mountPath: /app
+        - name: node-modules
+          mountPath: /app/node_modules
+
+---
+# k8s/servicenow/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: servicenow-webhook
+  namespace: servicenow-integration
+  labels:
+    app: servicenow-webhook
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 3000
+    protocol: TCP
+    name: http
+  selector:
+    app: servicenow-webhook
+
+---
+# k8s/servicenow/app-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: servicenow-app-code
+  namespace: servicenow-integration
+data:
+  servicenow-webhook.js: |
+    // ServiceNow webhook service
+    const express = require('express');
+    const axios = require('axios');
+    const app = express();
+    
+    app.use(express.json());
+    
+    const SERVICENOW_INSTANCE = process.env.SERVICENOW_INSTANCE;
+    const SERVICENOW_USERNAME = process.env.SERVICENOW_USERNAME;
+    const SERVICENOW_PASSWORD = process.env.SERVICENOW_PASSWORD;
+    const SERVICENOW_ASSIGNMENT_GROUP = process.env.SERVICENOW_ASSIGNMENT_GROUP || 'DevOps Team';
+    const SERVICENOW_API_URL = `https://${SERVICENOW_INSTANCE}/api/now/table/incident`;
+    
+    const SEVERITY_TO_PRIORITY = {
+      'critical': '1',
+      'high': '2',
+      'warning': '3',
+      'info': '4'
+    };
+    
+    const SEVERITY_TO_IMPACT = {
+      'critical': '1',
+      'high': '2',
+      'warning': '3',
+      'info': '3'
+    };
+    
+    const alertToIncidentMap = new Map();
+    
+    async function createIncident(alert) {
+      const severity = alert.labels.severity || 'warning';
+      const alertname = alert.labels.alertname || 'Unknown Alert';
+      const namespace = alert.labels.namespace || 'default';
+      const instance = alert.labels.instance || 'unknown';
+      
+      const shortDescription = `[${severity.toUpperCase()}] ${alertname} - ${namespace}`;
+      const description = `
+    PROMETHEUS ALERT
+    ================
+    
+    Alert: ${alertname}
+    Severity: ${severity}
+    Status: ${alert.status}
+    Namespace: ${namespace}
+    Instance: ${instance}
+    
+    Summary: ${alert.annotations.summary || 'No summary available'}
+    Description: ${alert.annotations.description || 'No description available'}
+    
+    Started At: ${alert.startsAt}
+    
+    Labels:
+    ${Object.entries(alert.labels).map(([k, v]) => `  ${k}: ${v}`).join('\n')}
+    
+    Alert Fingerprint: ${alert.fingerprint}
+      `.trim();
+    
+      const incidentData = {
+        short_description: shortDescription,
+        description: description,
+        priority: SEVERITY_TO_PRIORITY[severity] || '3',
+        impact: SEVERITY_TO_IMPACT[severity] || '3',
+        urgency: '2',
+        category: 'Infrastructure',
+        subcategory: 'Monitoring',
+        assignment_group: SERVICENOW_ASSIGNMENT_GROUP,
+        contact_type: 'Monitoring',
+        work_notes: `Alert generated by Prometheus at ${new Date().toISOString()}`
+      };
+    
+      try {
+        const response = await axios.post(SERVICENOW_API_URL, incidentData, {
+          auth: { username: SERVICENOW_USERNAME, password: SERVICENOW_PASSWORD },
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+        });
+    
+        const incident = response.data.result;
+        console.log(`✅ Created incident: ${incident.number} (${incident.sys_id})`);
+        alertToIncidentMap.set(alert.fingerprint, incident.sys_id);
+        return incident;
+      } catch (error) {
+        console.error('❌ Failed to create incident:', error.response?.data || error.message);
+        throw error;
+      }
+    }
+    
+    async function resolveIncident(alert) {
+      const incidentSysId = alertToIncidentMap.get(alert.fingerprint);
+      if (!incidentSysId) {
+        console.log(`⚠️  No incident found for: ${alert.fingerprint}`);
+        return null;
+      }
+    
+      const resolutionData = {
+        state: '6',
+        close_code: 'Solved (Permanently)',
+        close_notes: `Alert resolved by Prometheus at ${new Date().toISOString()}\nResolved At: ${alert.endsAt}`,
+        work_notes: 'Alert resolved automatically'
+      };
+    
+      try {
+        const response = await axios.patch(`${SERVICENOW_API_URL}/${incidentSysId}`, resolutionData, {
+          auth: { username: SERVICENOW_USERNAME, password: SERVICENOW_PASSWORD },
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+        });
+    
+        console.log(`✅ Resolved incident: ${response.data.result.number}`);
+        alertToIncidentMap.delete(alert.fingerprint);
+        return response.data.result;
+      } catch (error) {
+        console.error('❌ Failed to resolve incident:', error.response?.data || error.message);
+        throw error;
+      }
+    }
+    
+    app.post('/webhook', async (req, res) => {
+      console.log('📥 Received webhook');
+      const { alerts } = req.body;
+    
+      if (!alerts || !Array.isArray(alerts)) {
+        return res.status(400).json({ error: 'Invalid payload' });
+      }
+    
+      const results = [];
+      for (const alert of alerts) {
+        try {
+          if (alert.status === 'firing') {
+            const incident = await createIncident(alert);
+            results.push({ alert: alert.labels.alertname, incident: incident.number, action: 'created' });
+          } else if (alert.status === 'resolved') {
+            const incident = await resolveIncident(alert);
+            if (incident) results.push({ alert: alert.labels.alertname, incident: incident.number, action: 'resolved' });
+          }
+        } catch (error) {
+          results.push({ alert: alert.labels.alertname, error: error.message });
+        }
+      }
+    
+      res.json({ success: true, processed: alerts.length, results });
+    });
+    
+    app.get('/health', (req, res) => {
+      res.json({ status: 'healthy', instance: SERVICENOW_INSTANCE, mappings: alertToIncidentMap.size });
+    });
+    
+    app.post('/test', async (req, res) => {
+      try {
+        await axios.get(`${SERVICENOW_API_URL}?sysparm_limit=1`, {
+          auth: { username: SERVICENOW_USERNAME, password: SERVICENOW_PASSWORD },
+          headers: { 'Accept': 'application/json' }
+        });
+        res.json({ success: true, message: 'ServiceNow connection successful' });
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+    
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+      console.log(`🚀 ServiceNow webhook listening on ${PORT}`);
+      console.log(`📍 Instance: ${SERVICENOW_INSTANCE}`);
+    });
+  
+  package.json: |
+    {
+      "name": "servicenow-webhook",
+      "version": "1.0.0",
+      "main": "servicenow-webhook.js",
+      "dependencies": {
+        "express": "^4.18.2",
+        "axios": "^1.6.0"
+      }
+    }

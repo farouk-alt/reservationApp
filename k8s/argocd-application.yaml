@@ -7,6 +7,9 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
   annotations:
     argocd-image-updater.argoproj.io/write-back-method: git
+    servicenow-app-id: "reservation-management-system"
+    servicenow-app-owner: "DevOps Team"
+    servicenow-business-unit: "IT"
 spec:
   project: default
 

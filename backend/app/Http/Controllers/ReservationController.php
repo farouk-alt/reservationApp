@@ -108,7 +108,8 @@ public function store(Request $request)
         'statut'        => 'confirmée',
     ])->load('employe', 'salle');
 
-    $this->prometheus->incrementReservation('created', 'success');
+    app(PrometheusService::class)->incrementReservation($request->num_salle);
+
 
 
     // 📧 Email confirmation
@@ -211,7 +212,7 @@ public function cancel($id)
     \App\Models\Salle::where('id', $reservation->num_salle)
         ->update(['statut' => 'active']);
     
-    $this->prometheus->incrementReservation('cancelled', 'success');
+    
 
     // 📧 Send cancellation email
     if ($reservation->employe && $reservation->employe->email) {

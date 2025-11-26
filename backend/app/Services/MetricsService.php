@@ -62,6 +62,16 @@ class MetricsService
         }
     }
 
+    public function incrementErrors(): void
+    {
+        $errors = $this->registry->getOrRegisterCounter(
+            'reservation_app',
+            'app_errors_total',
+            'Total application errors'
+        );
+        $errors->inc();
+    }
+
     /**
      * Return all metrics in Prometheus format
      */

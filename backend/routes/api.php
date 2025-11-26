@@ -9,6 +9,7 @@ use App\Http\Controllers\EmployeAuthController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\AdminController;
 use App\Services\PrometheusService;
+use Illuminate\Http\Request;
 
 // ========================================
 // 📊 PROMETHEUS METRICS ENDPOINT (PUBLIC)
@@ -17,9 +18,8 @@ Route::get('/metrics', function (PrometheusService $prometheus) {
     return response($prometheus->render())
         ->header('Content-Type', 'text/plain; version=0.0.4');
 });
-// Public Auth Routes
 
-// Add named routes for authentication
+// Public Auth Routes
 Route::post('/admin/login', [AdminAuthController::class, 'login'])->name('admin.login');
 Route::post('/employe/login', [EmployeAuthController::class, 'login'])->name('employe.login');
 
@@ -27,9 +27,8 @@ Route::post('/employe/login', [EmployeAuthController::class, 'login'])->name('em
 Route::get('/login', function () {
     return response()->json(['message' => 'Please use /admin/login or /employe/login'], 401);
 })->name('login');
-// Route::post('/admin/login', [AdminAuthController::class, 'login']);
+
 Route::post('/employe/register', [EmployeAuthController::class, 'register']);
-// Route::post('/employe/login', [EmployeAuthController::class, 'login']);
 Route::post('/password/forgot', [PasswordResetController::class, 'sendResetLink']);
 Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']);
 
@@ -37,8 +36,8 @@ Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']
 Route::get('/salles', [SalleController::class, 'index']);
 Route::get('/salles/{id}', [SalleController::class, 'show']);
 
-// Protected Routes - Use api.auth instead of auth:sanctum
-Route::middleware('api.auth')->group(function () {
+// ✅ FIXED: Use built-in Sanctum middleware
+Route::middleware('auth:sanctum')->group(function () {
     // Admin
     Route::get('/admin/profile', [AdminAuthController::class, 'profile']);
     Route::put('/admin/profile', [AdminAuthController::class, 'updateProfile']);
@@ -65,4 +64,28 @@ Route::middleware('api.auth')->group(function () {
     
     // Stats
     Route::get('/admin/stats', [AdminController::class, 'stats']);
+});
+
+// Route::post('/web-vitals', function(Request $request) {
+//     $prometheusService = new PrometheusService();
+//     $prometheusService->observeWebVital($request->all());
+//     return response()->json(['ok' => true]);
+// });
+
+Route::get('/test-alert', function () {
+    throw new Exception("🔥 Test error message from backend");
+});
+// Temporary test route for database issues
+Route::get('/test-db-error', function () {
+    // Simulate database connection issue
+// Temporary test route for database issues
+Route::get('/test-db-error', function () {
+    // Simulate database connection issue
+    throw new \Illuminate\Database\QueryException(
+        'test query',
+        [],
+        [],
+        new Exception("Simulated database connection refused: Can't connect to MySQL server on 'mysql.reservation-app.svc.cluster.local' (111)")
+    );
+});
 });

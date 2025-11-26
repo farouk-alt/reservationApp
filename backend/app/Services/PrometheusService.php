@@ -78,16 +78,16 @@ class PrometheusService
     }
 
     // NEW: Business metrics
-    public function incrementReservation(string $action, string $status): void
-    {
-        $counter = self::$registry->getOrRegisterCounter(
-            $this->namespace,
-            'reservations_total',
-            'Total reservations by action and status',
-            ['action', 'status']
-        );
-        $counter->inc([$action, $status]);
-    }
+    // public function incrementReservation(string $action, string $status): void
+    // {
+    //     $counter = self::$registry->getOrRegisterCounter(
+    //         $this->namespace,
+    //         'reservations_total',
+    //         'Total reservations by action and status',
+    //         ['action', 'status']
+    //     );
+    //     $counter->inc([$action, $status]);
+    // }
 
     public function setActiveUsers(int $count): void
     {
@@ -104,4 +104,28 @@ class PrometheusService
         $renderer = new RenderTextFormat();
         return $renderer->render(self::$registry->getMetricFamilySamples());
     }
+    public function observeWebVital($metric)
+{
+    $gauge = $this->registry->getOrRegisterGauge(
+        'reservation_app',
+        'web_vital',
+        'Web Vitals from frontend',
+        ['metric']
+    );
+
+    $gauge->set($metric['value'], [$metric['name']]);
+}
+public function incrementReservation($salleId)
+{
+    $counter = $this->registry->getOrRegisterCounter(
+        'reservation_app',
+        'reservations_total',
+        'Total reservations created',
+        ['salle']
+    );
+
+    $counter->inc([$salleId]);
+}
+
+
 }

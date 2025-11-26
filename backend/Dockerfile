@@ -208,6 +208,13 @@ RUN rm -f bootstrap/cache/config.php \
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage
 
+# Enable PHP-FPM status page
+RUN echo "pm.status_path = /status" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "ping.path = /ping" >> /usr/local/etc/php-fpm.d/www.conf
+
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # Install APCu using pecl (NOT docker-php-ext-install)
 RUN pecl install apcu && docker-php-ext-enable apcu
 

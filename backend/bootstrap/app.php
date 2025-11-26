@@ -13,19 +13,29 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Add Prometheus metrics middleware
+
+        // Global middlewares
+        $middleware->statefulApi(); // IMPORTANT for SPA / token handling
+
         $middleware->append(\App\Http\Middleware\PrometheusMetrics::class);
+
+        // Register custom route middleware aliases
         $middleware->alias([
-        'api.auth' => \App\Http\Middleware\ApiAuthenticate::class,
-    ]);
+            'api.auth' => \App\Http\Middleware\ApiAuthenticate::class,
+        ]);
     })
-    
+
     ->withExceptions(function (Exceptions $exceptions) {
-    $exceptions->render(function (AuthenticationException $e, $request) {
-        if ($request->is('api/*')) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
-        }
-        // You can keep the default behavior for web routes if needed
-        return redirect()->guest('login');
-    });
-    })->create();
+
+        // Customize JSON response for failed authentication
+        $exceptions->render(function (AuthenticationException $e, $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'message' => 'Unauthenticated.'
+                ], 401);
+            }
+
+            return redirect()->guest('login');
+        });
+    })
+    ->create();

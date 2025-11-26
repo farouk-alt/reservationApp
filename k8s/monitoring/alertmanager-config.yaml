@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: alertmanager-kube-prometheus-stack-alertmanager-generated
+  namespace: monitoring
+type: Opaque
+stringData:
+  alertmanager.yaml: |
+    global:
+      resolve_timeout: 5m
+    route:
+      group_by: ['alertname']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 1h
+      receiver: 'discord-webhook'
+      routes:
+      - match:
+          alertname: HighErrorRate
+        receiver: discord-webhook
+    receivers:
+    - name: discord-webhook
+      webhook_configs:
+      - url: 'https://discord.com/api/webhooks/1442932363058483260/mL2YkWNwyQNiBxGfqbmAIwGQSdaK1mSFOGEPM2WykR0IphtjNK2JwG2PUYl-k5KqxjJb'
+        send_resolved: true

@@ -1,0 +1,69 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: reservation-app-rules
+  namespace: monitoring
+spec:
+  groups:
+    - name: reservation-app-alerts
+      rules:
+        # High backend errors
+        - alert: HighErrorRate
+          expr: rate(reservation_app_app_errors_total[5m]) > 0.1
+          for: 1m
+          labels:
+            severity: warning
+            namespace: reservation-app
+            app: backend
+          annotations:
+            summary: "High error rate detected in Reservation App"
+            description: "Error rate is {{ $value }} per second (threshold: 0.1)"
+            runbook_url: "https://github.com/farouk-alt/reservationApp/wiki/Runbook#high-error-rate"
+
+        # Slow API responses
+        - alert: SlowRequests
+          expr: histogram_quantile(0.95, rate(reservation_app_http_request_duration_seconds_bucket[5m])) > 1
+          for: 2m
+          labels:
+            severity: critical
+            namespace: reservation-app
+            app: backend
+          annotations:
+            summary: "Slow API responses detected"
+            description: "95th percentile response time is {{ $value }} seconds (threshold: 1s)"
+            runbook_url: "https://github.com/farouk-alt/reservationApp/wiki/Runbook#slow-requests"
+
+        # Pod restarting frequently
+        - alert: BackendPodRestarting
+          expr: increase(kube_pod_container_status_restarts_total{namespace="reservation-app",container="backend"}[10m]) > 2
+          labels:
+            severity: warning
+            namespace: reservation-app
+            app: backend
+          annotations:
+            summary: "Backend pod is restarting frequently"
+            description: "Pod has restarted {{ $value }} times in the last 10 minutes"
+
+        # PHP-FPM process issues
+        - alert: PHPFpmProcessIssue
+          expr: php_fpm_active_processes > 20
+          for: 3m
+          labels:
+            severity: warning
+            namespace: reservation-app
+            app: backend
+          annotations:
+            summary: "High PHP-FPM process count"
+            description: "Active PHP-FPM processes: {{ $value }}"
+
+        # Application down
+        - alert: ReservationAppDown
+          expr: up{job="reservation-app-backend"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            namespace: reservation-app
+            app: backend
+          annotations:
+            summary: "Reservation App backend is down"
+            description: "The backend service has been down for more than 1 minute"

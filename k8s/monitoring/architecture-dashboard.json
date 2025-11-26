@@ -1,0 +1,43 @@
+{
+  "title": "Reservation App - Architecture Overview",
+  "panels": [
+    {
+      "title": "Nginx vs PHP-FPM Health",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "up{job='nginx'}",
+          "legendFormat": "Nginx"
+        },
+        {
+          "expr": "up{job='php-fpm'}", 
+          "legendFormat": "PHP-FPM"
+        }
+      ]
+    },
+    {
+      "title": "Request Flow - Frontend to Backend",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(nginx_http_requests_total[5m])",
+          "legendFormat": "Nginx Requests"
+        },
+        {
+          "expr": "rate(php_fpm_requests_total[5m])",
+          "legendFormat": "PHP-FPM Requests"
+        }
+      ]
+    },
+    {
+      "title": "Architecture Components",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "servicenow_ci_info",
+          "format": "table"
+        }
+      ]
+    }
+  ]
+}

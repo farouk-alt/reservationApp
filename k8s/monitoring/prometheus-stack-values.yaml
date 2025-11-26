@@ -1,0 +1,64 @@
+# k8s/monitoring/prometheus-stack-values.yaml
+# Use this to properly configure Alertmanager through Helm
+
+alertmanager:
+  enabled: true
+  
+  config:
+    global:
+      resolve_timeout: 5m
+    
+    route:
+      receiver: 'discord-notifications'
+      group_by: ['alertname', 'cluster', 'service']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 5m
+      routes:
+      - receiver: 'discord-notifications'
+        matchers:
+        - alertname =~ ".+"
+    
+    receivers:
+    - name: 'discord-notifications'
+      webhook_configs:
+      - url: 'https://discord.com/api/webhooks/1442891776502534164/TsKwIXuhySqA8lNtzciO2L6nWQszCoIIcY__7waZ736_a4CeDmXYcj3lki7g1auhJQaA'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
+        max_alerts: 0
+    
+    inhibit_rules: []
+
+prometheus:
+  enabled: true
+  
+  prometheusSpec:
+    # Ensure Prometheus can talk to Alertmanager
+    alerting:
+      alertmanagers:
+      - namespace: monitoring
+        name: kube-prometheus-stack-alertmanager
+        port: http-web
+        pathPrefix: /
+    
+    # How often to evaluate rules
+    evaluationInterval: 30s
+    
+    # Scrape interval
+    scrapeInterval: 30s
+    
+    # Enable rule files
+    ruleSelector:
+      matchLabels:
+        app: kube-prometheus-stack
+        release: kube-prometheus-stack
+    
+    # Or allow all rules
+    ruleNamespaceSelector: {}
+    ruleSelectorNilUsesHelmValues: false
+
+# To apply this configuration:
+# helm upgrade kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+#   -n monitoring \
+#   -f prometheus-stack-values.yaml
