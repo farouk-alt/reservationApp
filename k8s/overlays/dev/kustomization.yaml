@@ -28,3 +28,4 @@ secretGenerator:
     literals:
       - root-password=1010
       - database=reservation_db_dev
+  - patches/rollout-patch.yaml
