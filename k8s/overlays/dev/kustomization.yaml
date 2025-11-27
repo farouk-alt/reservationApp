@@ -8,11 +8,10 @@ resources:
   - namespace.yaml
 
 patches:
-  - path: patch-rollout.yaml
+  - path: rollout-patch.yaml
     target:
       kind: Rollout
       name: reservation-app
-  
   - path: patch-mysql.yaml
     target:
       kind: Deployment
@@ -28,4 +27,3 @@ secretGenerator:
     literals:
       - root-password=1010
       - database=reservation_db_dev
-  - patches/rollout-patch.yaml
