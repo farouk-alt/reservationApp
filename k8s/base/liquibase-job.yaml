@@ -12,64 +12,28 @@ spec:
     metadata:
       labels:
         app: liquibase-migration
+        job-name: liquibase-migration
     spec:
       restartPolicy: Never
-
-      # 🔹 Volumes
       volumes:
-        - name: liquibase-changelog
+        - name: changelogs
           configMap:
             name: liquibase-changelog
-        - name: liquibase-lib
-          emptyDir: {}          # will hold the mysql connector jar
-
-      # 🔹 Init containers
-      initContainers:
-        # 1) Wait for MySQL
-        - name: wait-for-mysql
-          image: busybox:1.35
-          command:
-            - sh
-            - -c
-            - |
-              until nc -z mysql.reservation-app-dev.svc.cluster.local 3306; do
-                echo "Waiting for MySQL..."
-                sleep 3
-              done
-              echo "MySQL is ready!"
-
-        # 2) Download MySQL driver into the shared volume
-        - name: download-mysql-driver
-          image: curlimages/curl:8.11.1
-          command:
-            - sh
-            - -c
-            - |
-              echo "Downloading MySQL Connector/J..."
-              curl -L \
-                -o /liquibase-lib/mysql-connector-j-8.4.0.jar \
-                https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.4.0/mysql-connector-j-8.4.0.jar
-              echo "Downloaded files:"
-              ls -lh /liquibase-lib
-          volumeMounts:
-            - name: liquibase-lib
-              mountPath: /liquibase-lib
-
-      # 🔹 Liquibase container
       containers:
         - name: liquibase
           image: liquibase/liquibase:4.29.2
-          command: ["liquibase"]
+          command: ["/bin/sh", "-c"]
           args:
-            - --url=jdbc:mysql://mysql.reservation-app-dev.svc.cluster.local:3306/reservation_db?allowPublicKeyRetrieval=true&useSSL=false
-            - --username=root
-            - --password=1010
-            - --changeLogFile=db.changelog-master.yaml
-            - --log-level=INFO
-            - update
-          workingDir: /liquibase/changelog
+            - |
+              echo "Starting Liquibase migration..."
+              /liquibase/liquibase \
+                --url="jdbc:mysql://mysql.reservation-app-dev.svc.cluster.local:3306/reservation_db_dev?createDatabaseIfNotExist=true" \
+                --username=root \
+                --password=1010 \
+                --changeLogFile=/liquibase/db.changelog-master.yaml \
+                --log-level=INFO \
+                update
+              echo "Migration completed with exit code: $?"
           volumeMounts:
-            - name: liquibase-changelog
-              mountPath: /liquibase/changelog
-            - name: liquibase-lib         # 👈 mount shared volume into liquibase lib directory
-              mountPath: /liquibase/lib
+            - mountPath: /liquibase
+              name: changelogs
