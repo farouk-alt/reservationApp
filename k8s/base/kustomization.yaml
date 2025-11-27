@@ -23,7 +23,6 @@ resources:
   - liquibase-job.yaml
   - rollout.yaml
   - service.yaml
-
 labels:
   - pairs:
       app: reservation-app
