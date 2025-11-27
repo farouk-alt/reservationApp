@@ -5,9 +5,26 @@ namespace: reservation-app-dev
 
 resources:
   - ../../base
+  - namespace.yaml
 
 patches:
   - path: patch-rollout.yaml
     target:
       kind: Rollout
       name: reservation-app
+  
+  - path: patch-mysql.yaml
+    target:
+      kind: Deployment
+      name: mysql
+
+labels:
+  - pairs:
+      environment: dev
+
+secretGenerator:
+  - name: mysql-secret
+    behavior: replace
+    literals:
+      - root-password=1010
+      - database=reservation_db_dev

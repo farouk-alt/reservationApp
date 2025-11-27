@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init-script
+  namespace: reservation-app
+data:
+  init.sql: |
+    -- Initial database setup (optional - Liquibase will handle schema)
+    CREATE DATABASE IF NOT EXISTS reservation_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    USE reservation_db;
+    
+    -- Set timezone
+    SET time_zone = '+00:00';
+    
+    -- Grant permissions
+    GRANT ALL PRIVILEGES ON reservation_db.* TO 'root'@'%';
+    FLUSH PRIVILEGES;

@@ -1,31 +1,32 @@
-# apiVersion: apps/v1
-# kind: Deployment
-# metadata:
-#   name: reservation-app
-# spec:
-#   replicas: 1
-#   template:
-#     spec:
-#       containers:
-#         - name: backend
-#           image: faroukelrey19008/reservation-backend:195
-#         - name: frontend
-#           image: faroukelrey19008/reservation-frontend:195
 apiVersion: argoproj.io/v1alpha1
-kind: Application
+kind: Rollout
 metadata:
-  name: reservation-app-dev
+  name: reservation-app
 spec:
-  destination:
-    namespace: reservation-app-dev
-    server: https://kubernetes.default.svc
-  source:
-    repoURL: https://github.com/farouk-alt/reservationApp
-    targetRevision: main
-    path: k8s/overlays/dev     # 👈 correct
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
+  replicas: 1  # Dev only needs 1 replica
+  
+  strategy:
+    canary:
+      steps:
+      - setWeight: 100  # Deploy immediately in dev (no canary)
+  
+  template:
+    spec:
+      containers:
+      - name: backend
+        image: faroukelrey19008/reservation-backend:latest  # Will be updated by Jenkins
+        env:
+        - name: APP_ENV
+          value: development
+        - name: APP_DEBUG
+          value: "true"
+        - name: DB_HOST
+          value: mysql.reservation-app-dev.svc.cluster.local
+        - name: DB_DATABASE
+          value: reservation_db_dev
+      
+      - name: frontend
+        image: faroukelrey19008/reservation-frontend:latest
+        env:
+        - name: REACT_APP_ENV
+          value: development

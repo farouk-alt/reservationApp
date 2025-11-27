@@ -5,9 +5,23 @@ namespace: reservation-app-staging
 
 resources:
   - ../../base
+  - namespace.yaml
 
 patches:
   - path: patch-rollout.yaml
     target:
       kind: Rollout
       name: reservation-app
+
+labels:
+  - pairs:
+      environment: staging
+
+secretGenerator:
+  - name: mysql-secret
+    behavior: replace
+    literals:
+      - password=staging1010
+      - root-password=staging1010
+      - database=reservation_db_staging
+      - username=root

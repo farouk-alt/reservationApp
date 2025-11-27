@@ -6,6 +6,767 @@ data:
   db.changelog-master.yaml: |
     databaseChangeLog:
       - include:
-          file: database/changelog/001-create-tables.yaml
+          file: 001-create-tables.yaml
+          relativeToChangelogFile: true
       - include:
-          file: database/changelog/002-seed-data.yaml
+          file: 002-seed-data.yaml
+          relativeToChangelogFile: true
+
+  001-create-tables.yaml: |
+    databaseChangeLog:
+      - changeSet:
+          id: create-cache
+          author: farouk
+          changes:
+            - createTable:
+                tableName: cache
+                columns:
+                  - column:
+                      name: key
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                        primaryKey: true
+                  - column:
+                      name: value
+                      type: mediumtext
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: expiration
+                      type: int
+                      constraints:
+                        nullable: false
+
+      - changeSet:
+          id: create-cache-locks
+          author: farouk
+          changes:
+            - createTable:
+                tableName: cache_locks
+                columns:
+                  - column:
+                      name: key
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                        primaryKey: true
+                  - column:
+                      name: owner
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: expiration
+                      type: int
+                      constraints:
+                        nullable: false
+
+      - changeSet:
+          id: create-employes
+          author: farouk
+          changes:
+            - createTable:
+                tableName: employes
+                columns:
+                  - column:
+                      name: id
+                      type: BIGINT UNSIGNED
+                      autoIncrement: true
+                      constraints:
+                        primaryKey: true
+                        nullable: false
+                        unsigned: true
+                  - column:
+                      name: nom
+                      type: varchar(55)
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: prenom
+                      type: varchar(55)
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: departement
+                      type: varchar(55)
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: username
+                      type: varchar(55)
+                      constraints:
+                        nullable: false
+                        unique: true
+                  - column:
+                      name: password
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: email
+                      type: varchar(55)
+                      constraints:
+                        nullable: false
+                        unique: true
+                  - column:
+                      name: created_at
+                      type: timestamp
+                  - column:
+                      name: updated_at
+                      type: timestamp
+
+      - changeSet:
+          id: create-failed-jobs
+          author: farouk
+          changes:
+            - createTable:
+                tableName: failed_jobs
+                columns:
+                  - column:
+                      name: id
+                      type: BIGINT UNSIGNED
+                      autoIncrement: true
+                      constraints:
+                        primaryKey: true
+                        nullable: false
+                        unsigned: true
+                  - column:
+                      name: uuid
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                        unique: true
+                  - column:
+                      name: connection
+                      type: text
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: queue
+                      type: text
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: payload
+                      type: longtext
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: exception
+                      type: longtext
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: failed_at
+                      type: timestamp
+                      defaultValueComputed: CURRENT_TIMESTAMP
+
+      - changeSet:
+          id: create-job-batches
+          author: farouk
+          changes:
+            - createTable:
+                tableName: job_batches
+                columns:
+                  - column:
+                      name: id
+                      type: varchar(255)
+                      constraints:
+                        primaryKey: true
+                  - column:
+                      name: name
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: total_jobs
+                      type: int
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: pending_jobs
+                      type: int
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: failed_jobs
+                      type: int
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: failed_job_ids
+                      type: longtext
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: options
+                      type: mediumtext
+                  - column:
+                      name: cancelled_at
+                      type: int
+                  - column:
+                      name: created_at
+                      type: int
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: finished_at
+                      type: int
+
+      - changeSet:
+          id: create-jobs
+          author: farouk
+          changes:
+            - createTable:
+                tableName: jobs
+                columns:
+                  - column:
+                      name: id
+                      type: BIGINT UNSIGNED
+                      autoIncrement: true
+                      constraints:
+                        primaryKey: true
+                        nullable: false
+                        unsigned: true
+                  - column:
+                      name: queue
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: payload
+                      type: longtext
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: attempts
+                      type: tinyint unsigned
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: reserved_at
+                      type: int unsigned
+                  - column:
+                      name: available_at
+                      type: int unsigned
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: created_at
+                      type: int unsigned
+                      constraints:
+                        nullable: false
+            - createIndex:
+                tableName: jobs
+                indexName: jobs_queue_index
+                columns:
+                  - column:
+                      name: queue
+
+      - changeSet:
+          id: create-migrations
+          author: farouk
+          changes:
+            - createTable:
+                tableName: migrations
+                columns:
+                  - column:
+                      name: id
+                      type: int unsigned AUTO_INCREMENT
+                      constraints:
+                        primaryKey: true
+                  - column:
+                      name: migration
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: batch
+                      type: int
+                      constraints:
+                        nullable: false
+
+      - changeSet:
+          id: create-password-reset-tokens
+          author: farouk
+          changes:
+            - createTable:
+                tableName: password_reset_tokens
+                columns:
+                  - column:
+                      name: email
+                      type: varchar(255)
+                      constraints:
+                        primaryKey: true
+                  - column:
+                      name: token
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: created_at
+                      type: timestamp
+
+      - changeSet:
+          id: create-password-resets
+          author: farouk
+          changes:
+            - createTable:
+                tableName: password_resets
+                columns:
+                  - column:
+                      name: email
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: token
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: created_at
+                      type: timestamp
+            - createIndex:
+                tableName: password_resets
+                indexName: password_resets_email_index
+                columns:
+                  - column:
+                      name: email
+
+      - changeSet:
+          id: create-personal-access-tokens
+          author: farouk
+          changes:
+            - createTable:
+                tableName: personal_access_tokens
+                columns:
+                  - column:
+                      name: id
+                      type: BIGINT UNSIGNED
+                      autoIncrement: true
+                      constraints:
+                        primaryKey: true
+                        nullable: false
+                        unsigned: true
+                  - column:
+                      name: tokenable_type
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: tokenable_id
+                      type: BIGINT UNSIGNED
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: name
+                      type: text
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: token
+                      type: varchar(64)
+                      constraints:
+                        nullable: false
+                        unique: true
+                  - column:
+                      name: abilities
+                      type: text
+                  - column:
+                      name: last_used_at
+                      type: timestamp
+                  - column:
+                      name: expires_at
+                      type: timestamp
+                  - column:
+                      name: created_at
+                      type: timestamp
+                  - column:
+                      name: updated_at
+                      type: timestamp
+            - createIndex:
+                tableName: personal_access_tokens
+                indexName: personal_access_tokens_tokenable
+                columns:
+                  - column:
+                      name: tokenable_type
+                  - column:
+                      name: tokenable_id
+            - createIndex:
+                tableName: personal_access_tokens
+                indexName: personal_access_tokens_expires_at_index
+                columns:
+                  - column:
+                      name: expires_at
+
+      - changeSet:
+          id: create-salles
+          author: farouk
+          changes:
+            - createTable:
+                tableName: salles
+                columns:
+                  - column:
+                      name: id
+                      type: BIGINT UNSIGNED
+                      autoIncrement: true
+                      constraints:
+                        primaryKey: true
+                        nullable: false
+                        unsigned: true
+                  - column:
+                      name: code
+                      type: varchar(10)
+                      constraints:
+                        nullable: false
+                        unique: true
+                  - column:
+                      name: type
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: capacite
+                      type: int
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: statut
+                      type: varchar(255)
+                      defaultValue: active
+                  - column:
+                      name: created_at
+                      type: timestamp
+                  - column:
+                      name: updated_at
+                      type: timestamp
+
+      - changeSet:
+          id: create-reservations
+          author: farouk
+          changes:
+            - createTable:
+                tableName: reservations
+                columns:
+                  - column:
+                      name: id
+                      type: BIGINT UNSIGNED
+                      autoIncrement: true
+                      constraints:
+                        primaryKey: true
+                        nullable: false
+                        unsigned: true
+                  - column:
+                      name: num_emp
+                      type: BIGINT UNSIGNED
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: num_salle
+                      type: BIGINT UNSIGNED
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: date_res
+                      type: date
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: heure_res
+                      type: time
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: duree_minutes
+                      type: int
+                  - column:
+                      name: statut
+                      type: varchar(55)
+                      defaultValue: en_attente
+                  - column:
+                      name: created_at
+                      type: timestamp
+                  - column:
+                      name: updated_at
+                      type: timestamp
+            - addForeignKeyConstraint:
+                baseTableName: reservations
+                baseColumnNames: num_emp
+                referencedTableName: employes
+                referencedColumnNames: id
+                onDelete: cascade
+                constraintName: reservations_num_emp_foreign
+            - addForeignKeyConstraint:
+                baseTableName: reservations
+                baseColumnNames: num_salle
+                referencedTableName: salles
+                referencedColumnNames: id
+                onDelete: cascade
+                constraintName: reservations_num_salle_foreign
+
+      - changeSet:
+          id: create-sessions
+          author: farouk
+          changes:
+            - createTable:
+                tableName: sessions
+                columns:
+                  - column:
+                      name: id
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                        primaryKey: true
+                  - column:
+                      name: user_id
+                      type: BIGINT UNSIGNED
+                  - column:
+                      name: ip_address
+                      type: varchar(45)
+                  - column:
+                      name: user_agent
+                      type: text
+                  - column:
+                      name: payload
+                      type: longtext
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: last_activity
+                      type: int
+                      constraints:
+                        nullable: false
+            - createIndex:
+                tableName: sessions
+                indexName: sessions_user_id_index
+                columns:
+                  - column:
+                      name: user_id
+            - createIndex:
+                tableName: sessions
+                indexName: sessions_last_activity_index
+                columns:
+                  - column:
+                      name: last_activity
+
+      - changeSet:
+          id: create-users
+          author: farouk
+          changes:
+            - createTable:
+                tableName: users
+                columns:
+                  - column:
+                      name: id
+                      type: BIGINT UNSIGNED
+                      autoIncrement: true
+                      constraints:
+                        primaryKey: true
+                        nullable: false
+                        unsigned: true
+                  - column:
+                      name: name
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: email
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                        unique: true
+                  - column:
+                      name: email_verified_at
+                      type: timestamp
+                  - column:
+                      name: password
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                  - column:
+                      name: remember_token
+                      type: varchar(100)
+                  - column:
+                      name: created_at
+                      type: timestamp
+                  - column:
+                      name: updated_at
+                      type: timestamp
+
+
+
+  002-seed-data.yaml: |
+    databaseChangeLog:
+      - changeSet:
+          id: seed-employes
+          author: farouk
+          changes:
+            - insert:
+                tableName: employes
+                columns:
+                  - column: {name: id, valueNumeric: 1}
+                  - column: {name: nom, value: "karti"}
+                  - column: {name: prenom, value: "farouk"}
+                  - column: {name: departement, value: "IT"}
+                  - column: {name: username, value: "farouk1122"}
+                  - column: {name: password, value: "$2y$12$gbHPHJ5Pl.m/Bq7PLuHDJOsYy.lLfUYcAm8U.cmrEg/pgI/Lmffty"}
+                  - column: {name: email, value: "faroukkarti1999@gmail.com"}
+                  - column: {name: created_at, value: "2025-11-23 21:34:09"}
+                  - column: {name: updated_at, value: "2025-11-23 21:34:09"}
+
+            - insert:
+                tableName: employes
+                columns:
+                  - column: {name: id, valueNumeric: 2}
+                  - column: {name: nom, value: "test"}
+                  - column: {name: prenom, value: "test"}
+                  - column: {name: departement, value: "HR"}
+                  - column: {name: username, value: "test"}
+                  - column: {name: password, value: "$2y$12$.z0Ls85vV9YGsyGFkN92/uBZhA.1JFiB/o3J0tFLX0VZCWY73H/4e"}
+                  - column: {name: email, value: "test@gmail.com"}
+                  - column: {name: created_at, value: "2025-11-24 19:19:14"}
+                  - column: {name: updated_at, value: "2025-11-24 19:19:14"}
+
+
+      # =============== SALLES SEED ===============
+      - changeSet:
+          id: seed-salles
+          author: farouk
+          changes:
+            - insert:
+                tableName: salles
+                columns:
+                  - column: {name: id, valueNumeric: 1}
+                  - column: {name: code, value: "1E"}
+                  - column: {name: type, value: "Salle de conférence"}
+                  - column: {name: capacite, valueNumeric: 20}
+                  - column: {name: statut, value: "active"}
+                  - column: {name: created_at, value: "2025-11-23 21:33:18"}
+                  - column: {name: updated_at, value: "2025-11-23 21:33:18"}
+
+
+      # =============== USERS SEED ===============
+      - changeSet:
+          id: seed-users
+          author: farouk
+          changes:
+            - insert:
+                tableName: users
+                columns:
+                  - column: {name: id, valueNumeric: 4}
+                  - column: {name: name, value: "Admin"}
+                  - column: {name: email, value: "admin@example.com"}
+                  - column: {name: email_verified_at, value: null}
+                  - column: {name: password, value: "$2y$12$RzzycWBDWdTgFJyt8PHyueoVS07jVfSCiXs4LQrfj8QmRAHxLEkp2"}
+                  - column: {name: remember_token, value: null}
+                  - column: {name: created_at, value: "2025-11-24 19:43:08"}
+                  - column: {name: updated_at, value: "2025-11-24 19:43:08"}
+
+
+      # =============== PERSONAL ACCESS TOKENS SEED ===============
+      - changeSet:
+          id: seed-personal-access-tokens
+          author: farouk
+          changes:
+            - insert:
+                tableName: personal_access_tokens
+                columns:
+                  - column: {name: id, valueNumeric: 1}
+                  - column: {name: tokenable_type, value: "App\\Models\\User"}
+                  - column: {name: tokenable_id, valueNumeric: 1}
+                  - column: {name: name, value: "admin_token"}
+                  - column: {name: token, value: "f7b6ce0d7fcd5f474d65f55a05247a02cc36b0ccfef00018f73c4d0840f3648f"}
+                  - column: {name: abilities, value: "[\"*\"]"}
+                  - column: {name: last_used_at, value: "2025-11-23 21:34:20"}
+                  - column: {name: created_at, value: "2025-11-23 21:32:58"}
+                  - column: {name: updated_at, value: "2025-11-23 21:34:20"}
+
+            - insert:
+                tableName: personal_access_tokens
+                columns:
+                  - column: {name: id, valueNumeric: 2}
+                  - column: {name: tokenable_type, value: "App\\Models\\User"}
+                  - column: {name: tokenable_id, valueNumeric: 1}
+                  - column: {name: name, value: "admin_token"}
+                  - column: {name: token, value: "cedcb0ca880267377704ca8bda72933938e9d64c0deb5a60806b74318489902b"}
+                  - column: {name: abilities, value: "[\"*\"]"}
+                  - column: {name: last_used_at, value: "2025-11-23 22:48:33"}
+                  - column: {name: created_at, value: "2025-11-23 22:48:33"}
+                  - column: {name: updated_at, value: "2025-11-23 22:48:33"}
+
+            - insert:
+                tableName: personal_access_tokens
+                columns:
+                  - column: {name: id, valueNumeric: 3}
+                  - column: {name: tokenable_type, value: "App\\Models\\Employe"}
+                  - column: {name: tokenable_id, valueNumeric: 1}
+                  - column: {name: name, value: "employe_token"}
+                  - column: {name: token, value: "469075f604b510b8385f7a26ce1dfb9db6ac6e15580c3b4438c968735ecf3531"}
+                  - column: {name: abilities, value: "[\"*\"]"}
+                  - column: {name: last_used_at, value: "2025-11-24 19:10:39"}
+                  - column: {name: created_at, value: "2025-11-24 19:09:57"}
+                  - column: {name: updated_at, value: "2025-11-24 19:10:39"}
+
+            - insert:
+                tableName: personal_access_tokens
+                columns:
+                  - column: {name: id, valueNumeric: 4}
+                  - column: {name: tokenable_type, value: "App\\Models\\Employe"}
+                  - column: {name: tokenable_id, valueNumeric: 2}
+                  - column: {name: name, value: "employe_token"}
+                  - column: {name: token, value: "f5c4e00ff56f8f7a8a3fbd6be755f526200209c0ae1a7afeb420be2d1e330002"}
+                  - column: {name: abilities, value: "[\"*\"]"}
+                  - column: {name: last_used_at, value: "2025-11-24 19:23:28"}
+                  - column: {name: created_at, value: "2025-11-24 19:19:14"}
+                  - column: {name: updated_at, value: "2025-11-24 19:23:28"}
+
+            - insert:
+                tableName: personal_access_tokens
+                columns:
+                  - column: {name: id, valueNumeric: 12}
+                  - column: {name: tokenable_type, value: "App\\Models\\User"}
+                  - column: {name: tokenable_id, valueNumeric: 4}
+                  - column: {name: name, value: "admin_token"}
+                  - column: {name: token, value: "3bb2c8644be446ba745aed9fe0beb2a78379ade443c0ef0b72138632e06deaf3"}
+                  - column: {name: abilities, value: "[\"*\"]"}
+                  - column: {name: created_at, value: "2025-11-25 18:58:24"}
+                  - column: {name: updated_at, value: "2025-11-25 18:58:24"}
+
+            - insert:
+                tableName: personal_access_tokens
+                columns:
+                  - column: {name: id, valueNumeric: 13}
+                  - column: {name: tokenable_type, value: "App\\Models\\User"}
+                  - column: {name: tokenable_id, valueNumeric: 4}
+                  - column: {name: name, value: "admin_token"}
+                  - column: {name: token, value: "59151991c152f6c0b31ed33c17f285c4a7f5bc31b59d1c2a375b86fdf80d2218"}
+                  - column: {name: abilities, value: "[\"*\"]"}
+                  - column: {name: last_used_at, value: "2025-11-25 19:40:48"}
+                  - column: {name: created_at, value: "2025-11-25 18:59:24"}
+                  - column: {name: updated_at, value: "2025-11-25 19:40:48"}
+
+            - insert:
+                tableName: personal_access_tokens
+                columns:
+                  - column: {name: id, valueNumeric: 14}
+                  - column: {name: tokenable_type, value: "App\\Models\\User"}
+                  - column: {name: tokenable_id, valueNumeric: 4}
+                  - column: {name: name, value: "admin_token"}
+                  - column: {name: token, value: "6e2f49a87c9934c58edd76d06f4f60ec82b1b5a63cd182f96eca5d24d1074b80"}
+                  - column: {name: abilities, value: "[\"*\"]"}
+                  - column: {name: created_at, value: "2025-11-25 19:40:59"}
+                  - column: {name: updated_at, value: "2025-11-25 19:40:59"}
+
+            - insert:
+                tableName: personal_access_tokens
+                columns:
+                  - column: {name: id, valueNumeric: 15}
+                  - column: {name: tokenable_type, value: "App\\Models\\Employe"}
+                  - column: {name: tokenable_id, valueNumeric: 1}
+                  - column: {name: name, value: "employe_token"}
+                  - column: {name: token, value: "c338cd2794aab09bcdf7e46557e21f61bcaf396fda86355a91ff2d67e7474565"}
+                  - column: {name: abilities, value: "[\"*\"]"}
+                  - column: {name: created_at, value: "2025-11-25 19:41:15"}
+                  - column: {name: updated_at, value: "2025-11-25 19:41:17"}

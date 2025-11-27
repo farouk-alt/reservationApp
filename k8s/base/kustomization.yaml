@@ -1,6 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: reservation-app
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+secretGenerator:
+  - name: mysql-secret
+    literals:
+      - password=1010
+      - root-password=1010
+      - database=reservation_db
+      - username=root
+
 resources:
+  - mysql-pvc.yaml
+  - mysql-deployment.yaml
+  - mysql-service.yaml
+  - mysql-init-configmap.yaml
+  - liquibase-changelog-configmap.yaml
+  - liquibase-job.yaml
   - rollout.yaml
   - service.yaml
-  - liquibase-changelog-configmap.yaml
-  - mysql-driver-configmap.yaml
-  - liquibase-job.yaml
+
+labels:
+  - pairs:
+      app: reservation-app
+      managed-by: argocd

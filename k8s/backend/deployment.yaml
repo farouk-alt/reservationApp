@@ -21,17 +21,17 @@ spec:
     spec:
       imagePullSecrets:
         - name: regcred
-      initContainers:
-        - name: liquibase-migration
-          image: faroukelrey19008/reservation-backend:195  # ← use Jenkins tag!
-          workingDir: /var/www/html
-          command:
-            - liquibase
-            - --url=jdbc:mysql://mysql.reservation-app.svc.cluster.local:3306/reservation_db
-            - --username=root
-            - --password=1010
-            - --changeLogFile=/var/www/html/database/changelog/db.changelog-master.yaml
-            - update
+      # initContainers:
+      #   - name: liquibase-migration
+      #     image: faroukelrey19008/reservation-backend:195  # ← use Jenkins tag!
+      #     workingDir: /var/www/html
+      #     command:
+      #       - liquibase
+      #       - --url=jdbc:mysql://mysql.reservation-app.svc.cluster.local:3306/reservation_db
+      #       - --username=root
+      #       - --password=1010
+      #       - --changeLogFile=/var/www/html/database/changelog/db.changelog-master.yaml
+      #       - update
       containers:
         - name: backend
           image: faroukelrey19008/reservation-backend:195

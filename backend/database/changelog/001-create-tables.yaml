@@ -1,17 +1,218 @@
 databaseChangeLog:
   - changeSet:
-      id: 001
+      id: create-cache
       author: farouk
       changes:
         - createTable:
-            tableName: users
+            tableName: cache
             columns:
-              - column:
-                  name: id
-                  type: int
-                  autoIncrement: true
-                  constraints:
-                    primaryKey: true
-              - column:
-                  name: name
-                  type: varchar(255)
+              - column: {name: key, type: varchar(255), constraints: {primaryKey: true}}
+              - column: {name: value, type: mediumtext}
+              - column: {name: expiration, type: int}
+
+  - changeSet:
+      id: create-cache-locks
+      author: farouk
+      changes:
+        - createTable:
+            tableName: cache_locks
+            columns:
+              - column: {name: key, type: varchar(255), constraints: {primaryKey: true}}
+              - column: {name: owner, type: varchar(255)}
+              - column: {name: expiration, type: int}
+
+  - changeSet:
+      id: create-employes
+      author: farouk
+      changes:
+        - createTable:
+            tableName: employes
+            columns:
+              - column: {name: id, type: BIGINT UNSIGNED AUTO_INCREMENT, constraints: {primaryKey: true}}
+              - column: {name: nom, type: varchar(55)}
+              - column: {name: prenom, type: varchar(55)}
+              - column: {name: departement, type: varchar(55)}
+              - column: {name: username, type: varchar(55)}
+              - column: {name: password, type: varchar(255)}
+              - column: {name: email, type: varchar(55)}
+              - column: {name: created_at, type: timestamp}
+              - column: {name: updated_at, type: timestamp}
+        - addUniqueConstraint:
+            tableName: employes
+            columnNames: username
+            constraintName: employes_username_unique
+        - addUniqueConstraint:
+            tableName: employes
+            columnNames: email
+            constraintName: employes_email_unique
+
+  - changeSet:
+      id: create-failed-jobs
+      author: farouk
+      changes:
+        - createTable:
+            tableName: failed_jobs
+            columns:
+              - column: {name: id, type: BIGINT UNSIGNED AUTO_INCREMENT, constraints: {primaryKey: true}}
+              - column: {name: uuid, type: varchar(255)}
+              - column: {name: connection, type: text}
+              - column: {name: queue, type: text}
+              - column: {name: payload, type: longtext}
+              - column: {name: exception, type: longtext}
+              - column: {name: failed_at, type: timestamp}
+        - addUniqueConstraint:
+            tableName: failed_jobs
+            columnNames: uuid
+            constraintName: failed_jobs_uuid_unique
+
+  - changeSet:
+      id: create-job-batches
+      author: farouk
+      changes:
+        - createTable:
+            tableName: job_batches
+            columns:
+              - column: {name: id, type: varchar(255), constraints: {primaryKey: true}}
+              - column: {name: name, type: varchar(255)}
+              - column: {name: total_jobs, type: int}
+              - column: {name: pending_jobs, type: int}
+              - column: {name: failed_jobs, type: int}
+              - column: {name: failed_job_ids, type: longtext}
+              - column: {name: options, type: mediumtext}
+              - column: {name: cancelled_at, type: int}
+              - column: {name: created_at, type: int}
+              - column: {name: finished_at, type: int}
+
+  - changeSet:
+      id: create-jobs
+      author: farouk
+      changes:
+        - createTable:
+            tableName: jobs
+            columns:
+              - column: {name: id, type: BIGINT UNSIGNED AUTO_INCREMENT, constraints: {primaryKey: true}}
+              - column: {name: queue, type: varchar(255)}
+              - column: {name: payload, type: longtext}
+              - column: {name: attempts, type: tinyint unsigned}
+              - column: {name: reserved_at, type: int unsigned}
+              - column: {name: available_at, type: int unsigned}
+              - column: {name: created_at, type: int unsigned}
+
+  - changeSet:
+      id: create-migrations
+      author: farouk
+      changes:
+        - createTable:
+            tableName: migrations
+            columns:
+              - column: {name: id, type: int unsigned AUTO_INCREMENT, constraints: {primaryKey: true}}
+              - column: {name: migration, type: varchar(255)}
+              - column: {name: batch, type: int}
+
+  - changeSet:
+      id: create-password-reset-tokens
+      author: farouk
+      changes:
+        - createTable:
+            tableName: password_reset_tokens
+            columns:
+              - column: {name: email, type: varchar(255), constraints: {primaryKey: true}}
+              - column: {name: token, type: varchar(255)}
+              - column: {name: created_at, type: timestamp}
+
+  - changeSet:
+      id: create-password-resets
+      author: farouk
+      changes:
+        - createTable:
+            tableName: password_resets
+            columns:
+              - column: {name: email, type: varchar(255)}
+              - column: {name: token, type: varchar(255)}
+              - column: {name: created_at, type: timestamp}
+
+  - changeSet:
+      id: create-personal-access-tokens
+      author: farouk
+      changes:
+        - createTable:
+            tableName: personal_access_tokens
+            columns:
+              - column: {name: id, type: BIGINT UNSIGNED AUTO_INCREMENT, constraints: {primaryKey: true}}
+              - column: {name: tokenable_type, type: varchar(255)}
+              - column: {name: tokenable_id, type: BIGINT UNSIGNED}
+              - column: {name: name, type: text}
+              - column: {name: token, type: varchar(64)}
+              - column: {name: abilities, type: text}
+              - column: {name: last_used_at, type: timestamp}
+              - column: {name: expires_at, type: timestamp}
+              - column: {name: created_at, type: timestamp}
+              - column: {name: updated_at, type: timestamp}
+        - addUniqueConstraint:
+            columnNames: token
+            tableName: personal_access_tokens
+            constraintName: personal_access_tokens_token_unique
+
+  - changeSet:
+      id: create-salles
+      author: farouk
+      changes:
+        - createTable:
+            tableName: salles
+            columns:
+              - column: {name: id, type: BIGINT UNSIGNED AUTO_INCREMENT, constraints: {primaryKey: true}}
+              - column: {name: code, type: varchar(10)}
+              - column: {name: type, type: varchar(255)}
+              - column: {name: capacite, type: int}
+              - column: {name: statut, type: varchar(255)}
+              - column: {name: created_at, type: timestamp}
+              - column: {name: updated_at, type: timestamp}
+        - addUniqueConstraint:
+            tableName: salles
+            columnNames: code
+            constraintName: salles_code_unique
+
+  - changeSet:
+      id: create-reservations
+      author: farouk
+      changes:
+        - createTable:
+            tableName: reservations
+            columns:
+              - column: {name: id, type: BIGINT UNSIGNED AUTO_INCREMENT, constraints: {primaryKey: true}}
+              - column: {name: num_emp, type: BIGINT UNSIGNED}
+              - column: {name: num_salle, type: BIGINT UNSIGNED}
+              - column: {name: date_res, type: date}
+              - column: {name: heure_res, type: time}
+              - column: {name: duree_minutes, type: int}
+              - column: {name: statut, type: varchar(55)}
+              - column: {name: created_at, type: timestamp}
+              - column: {name: updated_at, type: timestamp}
+        - addForeignKeyConstraint:
+            baseColumnNames: num_emp
+            baseTableName: reservations
+            referencedColumnNames: id
+            referencedTableName: employes
+            onDelete: CASCADE
+            constraintName: reservations_num_emp_foreign
+        - addForeignKeyConstraint:
+            baseColumnNames: num_salle
+            baseTableName: reservations
+            referencedColumnNames: id
+            referencedTableName: salles
+            onDelete: CASCADE
+            constraintName: reservations_num_salle_foreign
+
+  - changeSet:
+      id: create-sessions
+      author: farouk
+      changes:
+        - createTable:
+            tableName: sessions
+            columns:
+              - column: {name: id, type: varchar(255), constraints: {primaryKey: true}}
+              - column: {name: user_id, type: BIGINT UNSIGNED}
+              - column: {name: ip_address, type: varchar(45)}
+              - column: {name: user_agent, type: text}
+              - column: {name: payload, type: longtext}
+              - column: {name: last_activity, type: int}

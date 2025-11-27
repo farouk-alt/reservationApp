@@ -1,0 +1,75 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: reservation-app
+spec:
+  replicas: 3  # Production uses 3 replicas for HA
+  
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+      steps:
+      - setWeight: 20
+      - pause: {duration: 2m}
+      - setWeight: 40
+      - pause: {duration: 2m}
+      - setWeight: 60
+      - pause: {duration: 2m}
+      - setWeight: 80
+      - pause: {duration: 1m}
+      
+      # Production-specific health checks
+      analysis:
+        templates:
+        - templateName: success-rate
+        startingStep: 2
+  
+  template:
+    spec:
+      # Add anti-affinity for HA
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - reservation-app
+              topologyKey: kubernetes.io/hostname
+      
+      containers:
+      - name: backend
+        image: faroukelrey19008/reservation-backend:latest
+        env:
+        - name: APP_ENV
+          value: production
+        - name: APP_DEBUG
+          value: "false"
+        - name: DB_HOST
+          value: mysql.reservation-app.svc.cluster.local
+        - name: DB_DATABASE
+          value: reservation_db
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+      
+      - name: frontend
+        image: faroukelrey19008/reservation-frontend:latest
+        env:
+        - name: REACT_APP_ENV
+          value: production
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "400m"

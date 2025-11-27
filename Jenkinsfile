@@ -257,30 +257,27 @@ pipeline {
         //         }
         //     }
         // }
-        stage('Run Liquibase Migration') {
-            when { expression { env.BRANCH_CLEAN == 'main' } }
-            steps {
-                script {
-                    def ns = "reservation-app-${params.DEPLOY_ENV}"
+        // stage('Run Liquibase Migration') {
+        //     when { expression { env.BRANCH_CLEAN == 'main' } }
+        //     steps {
+        //         script {
+        //             def ns = "reservation-app-${params.DEPLOY_ENV}"
 
-                    sh """
-                        # Make sure namespace exists (ArgoCD will also create it)
-                        kubectl create namespace ${ns} --dry-run=client -o yaml | kubectl apply -f -
+        //             sh """
+        //                 kubectl create namespace ${ns} --dry-run=client -o yaml | kubectl apply -f -
 
-                        # Apply Liquibase resources only
-                        kubectl -n ${ns} apply -f k8s/base/liquibase-changelog-configmap.yaml
-                        kubectl -n ${ns} apply -f k8s/base/mysql-driver-configmap.yaml
+        //                 kubectl -n ${ns} apply -f k8s/base/liquibase-changelog-configmap.yaml
+        //                 kubectl -n ${ns} apply -f k8s/base/mysql-driver-configmap.yaml
 
-                        # Re-create the job each time
-                        kubectl -n ${ns} delete job liquibase-migration --ignore-not-found=true
-                        kubectl -n ${ns} apply -f k8s/base/liquibase-job.yaml
+        //                 kubectl -n ${ns} delete job liquibase-migration --ignore-not-found=true
+        //                 kubectl -n ${ns} apply -f k8s/base/liquibase-job.yaml
 
-                        # Wait for migration to finish
-                        kubectl -n ${ns} wait --for=condition=complete job/liquibase-migration --timeout=300s
-                    """
-                }
-            }
-        }
+        //                 kubectl -n ${ns} wait --for=condition=complete job/liquibase-migration --timeout=300s
+        //             """
+        //         }
+        //     }
+        // }
+
 
 
         stage('Push Docker Images') {

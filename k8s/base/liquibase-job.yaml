@@ -2,24 +2,74 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: liquibase-migration
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
+  ttlSecondsAfterFinished: 100
+  backoffLimit: 3
   template:
+    metadata:
+      labels:
+        app: liquibase-migration
     spec:
       restartPolicy: Never
+
+      # 🔹 Volumes
+      volumes:
+        - name: liquibase-changelog
+          configMap:
+            name: liquibase-changelog
+        - name: liquibase-lib
+          emptyDir: {}          # will hold the mysql connector jar
+
+      # 🔹 Init containers
+      initContainers:
+        # 1) Wait for MySQL
+        - name: wait-for-mysql
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z mysql.reservation-app-dev.svc.cluster.local 3306; do
+                echo "Waiting for MySQL..."
+                sleep 3
+              done
+              echo "MySQL is ready!"
+
+        # 2) Download MySQL driver into the shared volume
+        - name: download-mysql-driver
+          image: curlimages/curl:8.11.1
+          command:
+            - sh
+            - -c
+            - |
+              echo "Downloading MySQL Connector/J..."
+              curl -L \
+                -o /liquibase-lib/mysql-connector-j-8.4.0.jar \
+                https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.4.0/mysql-connector-j-8.4.0.jar
+              echo "Downloaded files:"
+              ls -lh /liquibase-lib
+          volumeMounts:
+            - name: liquibase-lib
+              mountPath: /liquibase-lib
+
+      # 🔹 Liquibase container
       containers:
         - name: liquibase
           image: liquibase/liquibase:4.29.2
           command: ["liquibase"]
           args:
-            - --url=jdbc:mysql://mysql.reservation-app.svc.cluster.local:3306/reservation_db
+            - --url=jdbc:mysql://mysql.reservation-app-dev.svc.cluster.local:3306/reservation_db?allowPublicKeyRetrieval=true&useSSL=false
             - --username=root
             - --password=1010
-            - --changeLogFile=/liquibase/db.changelog-master.yaml
+            - --changeLogFile=db.changelog-master.yaml
+            - --log-level=INFO
             - update
+          workingDir: /liquibase/changelog
           volumeMounts:
-            - name: changelogs
-              mountPath: /liquibase
-      volumes:
-        - name: changelogs
-          configMap:
-            name: liquibase-changelog
+            - name: liquibase-changelog
+              mountPath: /liquibase/changelog
+            - name: liquibase-lib         # 👈 mount shared volume into liquibase lib directory
+              mountPath: /liquibase/lib

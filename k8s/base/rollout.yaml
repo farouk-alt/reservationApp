@@ -1,39 +1,106 @@
-# apiVersion: apps/v1
-# kind: Deployment
-# metadata:
-#   name: reservation-app
-# spec:
-#   replicas: 1
-#   selector:
-#     matchLabels:
-#       app: reservation-app
-#   template:
-#     metadata:
-#       labels:
-#         app: reservation-app
-#     spec:
-#       containers: []   # ← EMPTY! Let overlays fill it
 apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
   name: reservation-app
 spec:
   replicas: 2
-  strategy:
-    canary:
-      steps:
-      - setWeight: 20   # 20% traffic
-      - pause: {duration: 60}   # wait 1 min
-      - setWeight: 50
-      - pause: {duration: 120}
-      - setWeight: 100
-  revisionHistoryLimit: 3
+  revisionHistoryLimit: 5
+  
   selector:
     matchLabels:
       app: reservation-app
+  
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+      steps:
+      - setWeight: 20
+      - pause: {duration: 2m}
+      - setWeight: 50
+      - pause: {duration: 2m}
+      - setWeight: 80
+      - pause: {duration: 1m}
+      
+      # Auto-rollback on metrics failure
+      analysis:
+        templates:
+        - templateName: success-rate
+        startingStep: 2
+        args:
+        - name: service-name
+          value: reservation-app
+  
   template:
     metadata:
       labels:
         app: reservation-app
     spec:
-      containers: []   # will be filled by overlay patches
+      initContainers:
+      # Wait for database to be ready
+      - name: wait-for-db
+        image: busybox:1.35
+        command:
+        - sh
+        - -c
+        - |
+          until nc -z mysql.reservation-app.svc.cluster.local 3306; do
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+          echo "MySQL is ready!"
+      
+      containers:
+      - name: backend
+        image: faroukelrey19008/reservation-backend:latest  # Will be patched by overlays
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9000
+          name: backend
+        env:
+        - name: DB_HOST
+          value: mysql.reservation-app.svc.cluster.local
+        - name: DB_PORT
+          value: "3306"
+        - name: DB_DATABASE
+          value: reservation_db
+        - name: DB_USERNAME
+          value: root
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: password
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 9000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 9000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      
+      - name: frontend
+        image: faroukelrey19008/reservation-frontend:latest  # Will be patched
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: frontend
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
