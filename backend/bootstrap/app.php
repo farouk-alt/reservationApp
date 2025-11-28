@@ -15,8 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
 
         // Global middlewares
-        $middleware->statefulApi(); // IMPORTANT for SPA / token handling
+        // $middleware->statefulApi(); // IMPORTANT for SPA / token handling
 
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+        ]);
         $middleware->append(\App\Http\Middleware\PrometheusMetrics::class);
 
         // Register custom route middleware aliases
