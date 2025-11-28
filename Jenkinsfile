@@ -325,41 +325,41 @@ pipeline {
         //     }
         // }
 
-        stage('Trigger ArgoCD Sync') {
-            when {
-                expression { env.BRANCH_CLEAN == 'main' }
-            }
-            steps {
-                withCredentials([string(credentialsId: 'argocd-token', variable: 'ARGOCD_TOKEN')]) {
-                    script {
-                        def env = params.DEPLOY_ENV
-                        def timestamp = sh(script: 'date -u +"%Y-%m-%dT%H:%M:%SZ"', returnStdout: true).trim()
+        // stage('Trigger ArgoCD Sync') {
+        //     when {
+        //         expression { env.BRANCH_CLEAN == 'main' }
+        //     }
+        //     steps {
+        //         withCredentials([string(credentialsId: 'argocd-token', variable: 'ARGOCD_TOKEN')]) {
+        //             script {
+        //                 def env = params.DEPLOY_ENV
+        //                 def timestamp = sh(script: 'date -u +"%Y-%m-%dT%H:%M:%SZ"', returnStdout: true).trim()
 
-                        sh """
-                            kubectl patch app reservation-app-${env} -n argocd --type merge -p '{
-                                "metadata": {
-                                    "annotations": {
-                                        "servicenow-deployment-id": "${BUILD_NUMBER}",
-                                        "servicenow-deployment-time": "${timestamp}",
-                                        "deployed-by": "Jenkins"
-                                    }
-                                }
-                            }' || true
+        //                 sh """
+        //                     kubectl patch app reservation-app-${env} -n argocd --type merge -p '{
+        //                         "metadata": {
+        //                             "annotations": {
+        //                                 "servicenow-deployment-id": "${BUILD_NUMBER}",
+        //                                 "servicenow-deployment-time": "${timestamp}",
+        //                                 "deployed-by": "Jenkins"
+        //                             }
+        //                         }
+        //                     }' || true
 
-                            argocd app sync reservation-app-${env} \
-                                --server host.docker.internal:32050 \
-                                --auth-token ${ARGOCD_TOKEN} \
-                                --insecure --grpc-web --force --prune
+        //                     argocd app sync reservation-app-${env} \
+        //                         --server host.docker.internal:32050 \
+        //                         --auth-token ${ARGOCD_TOKEN} \
+        //                         --insecure --grpc-web --force --prune
 
-                            argocd app wait reservation-app-${env} \
-                                --server host.docker.internal:32050 \
-                                --auth-token ${ARGOCD_TOKEN} \
-                                --insecure --grpc-web --timeout 300
-                        """
-                    }
-                }
-            }
-        }
+        //                     argocd app wait reservation-app-${env} \
+        //                         --server host.docker.internal:32050 \
+        //                         --auth-token ${ARGOCD_TOKEN} \
+        //                         --insecure --grpc-web --timeout 300
+        //                 """
+        //             }
+        //         }
+        //     }
+        // }
         // stage('Update K8s Manifests') {
         //     steps {
 
@@ -387,50 +387,50 @@ pipeline {
         //         }
         //     }
         // }
-        stage('ServiceNow Integration') {
-            when {
-                expression { env.BRANCH_CLEAN == 'main' }
-            }
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'servicenow-credentials',
-                    usernameVariable: 'SERVICENOW_USER',
-                    passwordVariable: 'SERVICENOW_PASS'
-                )]) {
-                    sh '''
-                        BUILD_NUM="${BUILD_NUMBER}"
-                        BUILD_URL="${BUILD_URL}"
+        // stage('ServiceNow Integration') {
+        //     when {
+        //         expression { env.BRANCH_CLEAN == 'main' }
+        //     }
+        //     steps {
+        //         withCredentials([usernamePassword(
+        //             credentialsId: 'servicenow-credentials',
+        //             usernameVariable: 'SERVICENOW_USER',
+        //             passwordVariable: 'SERVICENOW_PASS'
+        //         )]) {
+        //             sh '''
+        //                 BUILD_NUM="${BUILD_NUMBER}"
+        //                 BUILD_URL="${BUILD_URL}"
 
-                        # Create Change Request
-                        curl -s -X POST "https://dev190642.service-now.com/api/now/table/change_request" \
-                            -u "${SERVICENOW_USER}:${SERVICENOW_PASS}" \
-                            -H "Content-Type: application/json" \
-                            -d '{
-                            "short_description": "Deploy Reservation App v'"$BUILD_NUM"'",
-                            "description": "Application: Reservation Management System\\nVersion: '"$BUILD_NUM"'\\nEnvironment: Production\\nBranch: main\\nDeployed by: Jenkins Pipeline\\nJenkins Build: '"$BUILD_URL"'\\nChanges: Updated containers to version '"$BUILD_NUM"'",
-                            "priority": "3",
-                            "risk": "Low",
-                            "impact": "Low",
-                            "type": "Standard"
-                            }' || echo "Change Request failed (ignored)"
+        //                 # Create Change Request
+        //                 curl -s -X POST "https://dev190642.service-now.com/api/now/table/change_request" \
+        //                     -u "${SERVICENOW_USER}:${SERVICENOW_PASS}" \
+        //                     -H "Content-Type: application/json" \
+        //                     -d '{
+        //                     "short_description": "Deploy Reservation App v'"$BUILD_NUM"'",
+        //                     "description": "Application: Reservation Management System\\nVersion: '"$BUILD_NUM"'\\nEnvironment: Production\\nBranch: main\\nDeployed by: Jenkins Pipeline\\nJenkins Build: '"$BUILD_URL"'\\nChanges: Updated containers to version '"$BUILD_NUM"'",
+        //                     "priority": "3",
+        //                     "risk": "Low",
+        //                     "impact": "Low",
+        //                     "type": "Standard"
+        //                     }' || echo "Change Request failed (ignored)"
 
-                        # Create Incident
-                        curl -s -X POST "https://dev190642.service-now.com/api/now/table/incident" \
-                            -u "${SERVICENOW_USER}:${SERVICENOW_PASS}" \
-                            -H "Content-Type: application/json" \
-                            -d '{
-                            "short_description": "[DEPLOYMENT] Reservation App v'"$BUILD_NUM"'",
-                            "description": "Deployment SUCCESS\\n• Version: '${BUILD_NUMBER}'\\n• Environment: ${params.DEPLOY_ENV}\\n• Build URL: '${BUILD_URL}'\\n• ArgoCD Sync: Completed"                            "priority": "4",
-                            "impact": "3",
-                            "urgency": "3",
-                            "category": "DevOps"
-                            }' || echo "Incident creation failed (ignored)"
+        //                 # Create Incident
+        //                 curl -s -X POST "https://dev190642.service-now.com/api/now/table/incident" \
+        //                     -u "${SERVICENOW_USER}:${SERVICENOW_PASS}" \
+        //                     -H "Content-Type: application/json" \
+        //                     -d '{
+        //                     "short_description": "[DEPLOYMENT] Reservation App v'"$BUILD_NUM"'",
+        //                     "description": "Deployment SUCCESS\\n• Version: '${BUILD_NUMBER}'\\n• Environment: ${params.DEPLOY_ENV}\\n• Build URL: '${BUILD_URL}'\\n• ArgoCD Sync: Completed"                            "priority": "4",
+        //                     "impact": "3",
+        //                     "urgency": "3",
+        //                     "category": "DevOps"
+        //                     }' || echo "Incident creation failed (ignored)"
 
-                        echo "ServiceNow integration completed"
-                    '''
-                }
-            }
-        }
+        //                 echo "ServiceNow integration completed"
+        //             '''
+        //         }
+        //     }
+        // }
     }
 
     post {

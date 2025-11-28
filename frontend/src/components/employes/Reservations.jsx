@@ -39,7 +39,7 @@ export default function Reservations({ reservations: propReservations }) {
       setShowEditModal(false);
       alert("✅ Réservation modifiée avec succès !");
     } catch (err) {
-      alert("❌ Erreur : " + (err.response?.data?.error || "Impossible de mettre à jour"));
+      return
     }
   };
   const formatDuration = (min) => {
