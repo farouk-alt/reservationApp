@@ -167,9 +167,9 @@ public function store(Request $request)
         })
         ->exists();
 
-    if ($employeeOverlap) {
-        return response()->json(['error' => '❌ Vous avez déjà une réservation dans ce créneau.'], 409);
-    }
+    // if ($employeeOverlap) {
+    //     return response()->json(['error' => '❌ Vous avez déjà une réservation dans ce créneau.'], 409);
+    // }
 
     // 🚫 Salle overlap (IGNORES canceled)
     $salleOverlap = Reservation::where('num_salle', $validated['num_salle'])
