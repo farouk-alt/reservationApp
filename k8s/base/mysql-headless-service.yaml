@@ -6,7 +6,6 @@ metadata:
   labels:
     app: mysql
 spec:
-  clusterIP: None  # Headless service
   ports:
   - port: 3306
     targetPort: 3306

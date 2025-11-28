@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: liquibase-working
+  namespace: reservation-app
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: changelog
+          configMap:
+            name: liquibase-changelog
+        - name: mysql-driver
+          emptyDir: {}
+      initContainers:
+        # Download MySQL driver
+        - name: download-driver
+          image: curlimages/curl:8.11.1
+          command:
+            - sh
+            - -c
+            - |
+              echo "Downloading MySQL driver..."
+              curl -L \
+                -o /driver/mysql-connector-j-8.4.0.jar \
+                https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.4.0/mysql-connector-j-8.4.0.jar
+              echo "Downloaded!"
+              ls -lh /driver/
+          volumeMounts:
+            - name: mysql-driver
+              mountPath: /driver
+      containers:
+        - name: liquibase
+          image: liquibase/liquibase:4.29.2
+          command:
+            - /liquibase/liquibase
+          args:
+            - --url=jdbc:mysql://mysql:3306/reservation_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false     
+            - --username=root
+            - --password=1010
+            - --changeLogFile=db.changelog-master.yaml
+            - --log-level=INFO
+            - update
+          workingDir: /liquibase/changelog
+          volumeMounts:
+            - name: changelog
+              mountPath: /liquibase/changelog
+            - name: mysql-driver
+              mountPath: /liquibase/lib

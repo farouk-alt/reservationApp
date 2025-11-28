@@ -1,3 +1,70 @@
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: backend
+#   namespace: reservation-app
+#   labels:
+#     app: backend
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: backend
+#       app.kubernetes.io/name: reservation-app
+#       managed-by: argocd
+#   template:
+#     metadata:
+#       labels:
+#         app: backend
+#         app.kubernetes.io/name: reservation-app
+#         managed-by: argocd
+#     spec:
+#       imagePullSecrets:
+#         - name: regcred
+#       # initContainers:
+#       #   - name: liquibase-migration
+#       #     image: faroukelrey19008/reservation-backend:195  # ← use Jenkins tag!
+#       #     workingDir: /var/www/html
+#       #     command:
+#       #       - liquibase
+#       #       - --url=jdbc:mysql://mysql.reservation-app.svc.cluster.local:3306/reservation_db
+#       #       - --username=root
+#       #       - --password=1010
+#       #       - --changeLogFile=/var/www/html/database/changelog/db.changelog-master.yaml
+#       #       - update
+#       containers:
+#         - name: backend
+#           image: faroukelrey19008/reservation-backend:195
+#           imagePullPolicy: Always
+#           ports:
+#             - containerPort: 9000
+#               name: fpm
+#           envFrom:
+#             - configMapRef:
+#                 name: mysql-config
+#             - configMapRef:
+#                 name: laravel-config
+#             - secretRef:
+#                 name: mysql-secret
+#           resources:
+#             requests:
+#               memory: "256Mi"
+#               cpu: "250m"
+#             limits:
+#               memory: "512Mi"
+#               cpu: "500m"
+#           livenessProbe:
+#             tcpSocket:
+#               port: 9000
+#             initialDelaySeconds: 30
+#             periodSeconds: 10
+#           readinessProbe:
+#             tcpSocket:
+#               port: 9000
+#             initialDelaySeconds: 10
+#             periodSeconds: 5
+# backend/deployment.yaml
+# k8s/backend/deployment.yaml (FIXED)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -10,28 +77,33 @@ spec:
   selector:
     matchLabels:
       app: backend
-      app.kubernetes.io/name: reservation-app
-      managed-by: argocd
   template:
     metadata:
       labels:
         app: backend
-        app.kubernetes.io/name: reservation-app
-        managed-by: argocd
     spec:
       imagePullSecrets:
         - name: regcred
-      # initContainers:
-      #   - name: liquibase-migration
-      #     image: faroukelrey19008/reservation-backend:195  # ← use Jenkins tag!
-      #     workingDir: /var/www/html
-      #     command:
-      #       - liquibase
-      #       - --url=jdbc:mysql://mysql.reservation-app.svc.cluster.local:3306/reservation_db
-      #       - --username=root
-      #       - --password=1010
-      #       - --changeLogFile=/var/www/html/database/changelog/db.changelog-master.yaml
-      #       - update
+      
+      initContainers:
+        # Wait for MySQL to be ready
+        - name: wait-for-mysql
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z mysql 3306; do
+                echo "Waiting for MySQL..."
+                sleep 2
+              done
+              echo "MySQL is ready!"
+              
+              # Give Liquibase job some time to complete
+              echo "Waiting 10 seconds for migrations..."
+              sleep 10
+              echo "Proceeding with backend startup"
+      
       containers:
         - name: backend
           image: faroukelrey19008/reservation-backend:195
@@ -39,13 +111,40 @@ spec:
           ports:
             - containerPort: 9000
               name: fpm
-          envFrom:
-            - configMapRef:
-                name: mysql-config
-            - configMapRef:
-                name: laravel-config
-            - secretRef:
-                name: mysql-secret
+          
+          env:
+            # Database connection
+            - name: DB_CONNECTION
+              value: "mysql"
+            - name: DB_HOST
+              value: "mysql"
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_DATABASE
+              value: "reservation_db"
+            - name: DB_USERNAME
+              value: "root"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: password
+            
+            # Laravel config
+            - name: APP_ENV
+              value: "production"
+            - name: APP_DEBUG
+              value: "false"
+            - name: APP_KEY
+              value: "base64:v+sCJQcJqOx00RKUZjFU95UF4/z/Y5kt4zHt9i6zMv0="  # Generate with: php artisan key:generate
+          
+          # Alternative: Use envFrom if you have configmaps
+          # envFrom:
+          #   - configMapRef:
+          #       name: backend-config
+          #   - secretRef:
+          #       name: mysql-secret
+          
           resources:
             requests:
               memory: "256Mi"
@@ -53,14 +152,17 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+          
           livenessProbe:
             tcpSocket:
               port: 9000
             initialDelaySeconds: 30
             periodSeconds: 10
+            failureThreshold: 3
+          
           readinessProbe:
             tcpSocket:
               port: 9000
             initialDelaySeconds: 10
             periodSeconds: 5
-      
+            failureThreshold: 3

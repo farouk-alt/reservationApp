@@ -2,38 +2,54 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: liquibase-migration
-  annotations:
-    argocd.argoproj.io/hook: PreSync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+  namespace: reservation-app
 spec:
-  ttlSecondsAfterFinished: 100
-  backoffLimit: 3
+  backoffLimit: 0
   template:
-    metadata:
-      labels:
-        app: liquibase-migration
-        job-name: liquibase-migration
     spec:
       restartPolicy: Never
+
       volumes:
-        - name: changelogs
+        - name: liquibase-lib
+          emptyDir: {}  # temp folder for JDBC + autocompletes
+        - name: liquibase-changelog
           configMap:
             name: liquibase-changelog
+
+      initContainers:
+        - name: download-mysql-driver
+          image: curlimages/curl:8.7.1
+          command:
+            - sh
+            - -c
+            - |
+              echo "Downloading MySQL JDBC driver..."
+              curl -L -o /drivers/mysql.jar \
+                https://repo1.maven.org/maven2/mysql/mysql-connector-j/8.3.0/mysql-connector-j-8.3.0.jar
+          volumeMounts:
+            - name: liquibase-lib
+              mountPath: /drivers
+
       containers:
         - name: liquibase
           image: liquibase/liquibase:4.29.2
-          command: ["/bin/sh", "-c"]
-          args:
+          workingDir: /liquibase/changelog
+          command:
+            - sh
+            - -c
             - |
-              echo "Starting Liquibase migration..."
-              /liquibase/liquibase \
-                --url="jdbc:mysql://mysql.reservation-app-dev.svc.cluster.local:3306/reservation_db_dev?createDatabaseIfNotExist=true" \
+              echo "Running Liquibase..."
+              
+              liquibase \
+                --classpath=/liquibase/lib/mysql.jar \
+                --url="jdbc:mysql://mysql.reservation-app.svc.cluster.local:3306/reservation_db" \
                 --username=root \
                 --password=1010 \
-                --changeLogFile=/liquibase/db.changelog-master.yaml \
-                --log-level=INFO \
+                --changeLogFile=db.changelog-master.yaml \
                 update
-              echo "Migration completed with exit code: $?"
+
           volumeMounts:
-            - mountPath: /liquibase
-              name: changelogs
+            - name: liquibase-lib
+              mountPath: /liquibase/lib
+            - name: liquibase-changelog
+              mountPath: /liquibase/changelog

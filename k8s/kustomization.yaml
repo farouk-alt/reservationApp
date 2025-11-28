@@ -14,6 +14,9 @@ resources:
   - backend/backend-nginx-service.yaml
   - frontend/deployment.yaml
   - frontend/service.yaml
+  - backend/code-pvc.yaml
+  - backend/liquibase-job.yaml
+  - backend/liquibase-configmap.yaml
 
 commonLabels:
   app.kubernetes.io/name: reservation-app
