@@ -16,12 +16,20 @@ data:
         try_files $uri /index.php?$query_string;
       }
 
-    location ~ \.php$ {
-        include fastcgi_params;
-        fastcgi_pass backend:9000;
-        fastcgi_index index.php;
-        fastcgi_param SCRIPT_FILENAME /var/www/html/public$fastcgi_script_name;
-    }
+      location ~ \.php$ {
+          include fastcgi_params;
+          fastcgi_pass backend:9000;
+          fastcgi_index index.php;
+          fastcgi_param SCRIPT_FILENAME /var/www/html/public$fastcgi_script_name;
+      }
+      location /sanctum {
+          try_files $uri /index.php?$query_string;
+      }
+
+      add_header Access-Control-Allow-Origin http://reservation.local always;
+      add_header Access-Control-Allow-Credentials true always;
+      add_header Access-Control-Allow-Headers "Content-Type, X-CSRF-TOKEN, X-Requested-With" always;
+
 
       location /health {
         return 200 "healthy\n";

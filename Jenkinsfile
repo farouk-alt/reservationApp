@@ -301,29 +301,29 @@ pipeline {
                 }
             }
         }
-        stage('Update Kustomize Overlay') {
-            steps {
-                script {
-                    def env = params.DEPLOY_ENV
-                        sh """
-                        sed -i 's|image: faroukelrey19008/reservation-backend:.*|image: faroukelrey19008/reservation-backend:${BUILD_NUMBER}|' k8s/overlays/${env}/patch-rollout.yaml
-                        sed -i 's|image: faroukelrey19008/reservation-frontend:.*|image: faroukelrey19008/reservation-frontend:${BUILD_NUMBER}|' k8s/overlays/${env}/patch-rollout.yaml
+        // stage('Update Kustomize Overlay') {
+        //     steps {
+        //         script {
+        //             def env = params.DEPLOY_ENV
+        //                 sh """
+        //                 sed -i 's|image: faroukelrey19008/reservation-backend:.*|image: faroukelrey19008/reservation-backend:${BUILD_NUMBER}|' k8s/overlays/${env}/patch-rollout.yaml
+        //                 sed -i 's|image: faroukelrey19008/reservation-frontend:.*|image: faroukelrey19008/reservation-frontend:${BUILD_NUMBER}|' k8s/overlays/${env}/patch-rollout.yaml
 
-                        git add k8s/overlays/${env}/
-                        git commit -m "Deploy v${BUILD_NUMBER} to ${env} [ci skip]" || echo "Nothing to commit"
-                        """
+        //                 git add k8s/overlays/${env}/
+        //                 git commit -m "Deploy v${BUILD_NUMBER} to ${env} [ci skip]" || echo "Nothing to commit"
+        //                 """
 
-                }
-                withCredentials([usernamePassword(credentialsId: 'jenkins-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                    sh """
-                        git config user.email "jenkins@ci.com"
-                        git config user.name "Jenkins CI"
-                        git remote set-url origin https://${GIT_USER}:${GIT_PASS}@github.com/farouk-alt/reservationApp.git
-                        git push origin HEAD:main
-                    """
-                }
-            }
-        }
+        //         }
+        //         withCredentials([usernamePassword(credentialsId: 'jenkins-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+        //             sh """
+        //                 git config user.email "jenkins@ci.com"
+        //                 git config user.name "Jenkins CI"
+        //                 git remote set-url origin https://${GIT_USER}:${GIT_PASS}@github.com/farouk-alt/reservationApp.git
+        //                 git push origin HEAD:main
+        //             """
+        //         }
+        //     }
+        // }
 
         stage('Trigger ArgoCD Sync') {
             when {
